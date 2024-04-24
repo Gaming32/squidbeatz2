@@ -22,24 +22,32 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        final Path yuzuDir = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win")
-            ? Path.of(System.getenv("APPDATA"), "yuzu")
-            : Path.of(System.getProperty("user.home"), ".local/share/yuzu");
-        if (!Files.exists(yuzuDir)) {
-            System.err.println("Yuzu directory (" + yuzuDir + ") not found");
-            System.exit(1);
+        final String dataParentEnvName = Constants.IS_WINDOWS ? "APPDATA" : "XDG_DATA_HOME";
+        final String dataParentEnv = System.getenv(dataParentEnvName);
+        final Path dataParent = dataParentEnv != null
+            ? Path.of(dataParentEnv)
+            : Path.of(System.getProperty("user.home"), ".local", "share");
+        Path suyuDir = dataParent.resolve("suyu");
+        if (!Files.exists(suyuDir)) {
+            final Path tryDir = dataParent.resolve("yuzu");
+            if (!Files.exists(tryDir)) {
+                System.err.println("Suyu directory (" + suyuDir + ") not found");
+                System.exit(1);
+            }
+            suyuDir = tryDir;
         }
-        final Path romfsPath = yuzuDir.resolve("dump/0100F8F0000A2000/romfs");
+
+        final Path romfsPath = suyuDir.resolve("dump/0100F8F0000A2000/romfs");
         if (!Files.exists(romfsPath)) {
             System.err.println("Splatoon 2 dump not found. Did you forget to dump Splatoon 2?");
             System.exit(1);
         }
-        final Path octoExpansionPath = yuzuDir.resolve("dump/0100F8F0000A3065/romfs");
+        final Path octoExpansionPath = suyuDir.resolve("dump/0100F8F0000A3065/romfs");
         final boolean octoExpansionDumped = Files.exists(octoExpansionPath);
 
         final Map<String, String> songs = getSongIds(romfsPath);
@@ -86,11 +94,23 @@ public class Main {
         final AudioInputStream ais = AudioSystem.getAudioInputStream(new ByteArrayInputStream(songAudio));
         final Clip clip = AudioSystem.getClip();
         clip.open(ais);
-        ((FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue(20f * (float)Math.log10(0.2));
+        ((FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue(20f * (float)Math.log10(0.3));
         clip.start();
+        final long length = clip.getMicrosecondLength();
         do {
-            Thread.sleep(1000);
+            final long position = clip.getMicrosecondPosition();
+            final int percentage = (int)Math.round((double)position / length * 60);
+            System.out.print(new StringBuilder("\r[")
+                .repeat('=', percentage)
+                .repeat(' ', 60 - percentage)
+                .append("] ")
+                .append(formatTimeMicros(position))
+                .append(" / ")
+                .append(formatTimeMicros(length))
+            );
+            Thread.sleep(100);
         } while (clip.isRunning());
+        System.out.println();
     }
 
     public static Map<String, String> getSongIds(Path romfsPath) throws IOException {
@@ -103,5 +123,11 @@ public class Main {
         try (InputStream is = allTranslations.getInputStream(Constants.MUSIC_NAMES_PATH)) {
             return MSBTReader.readMsbt(is);
         }
+    }
+
+    public static String formatTimeMicros(long micros) {
+        final long minutes = TimeUnit.MICROSECONDS.toMinutes(micros);
+        long seconds = TimeUnit.MICROSECONDS.toSeconds(micros) - minutes * 60;
+        return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
     }
 }

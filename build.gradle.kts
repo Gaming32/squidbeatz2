@@ -1,6 +1,5 @@
 plugins {
     java
-//    kotlin("jvm") version "1.9.23"
 }
 
 group = "io.github.gaming32"
@@ -26,4 +25,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "io.github.gaming32.squidbeatz2.Main"
+    }
+    from(configurations.runtimeClasspath.get().files.map { if (it.isDirectory) it else zipTree(it) })
 }
