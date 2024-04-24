@@ -32,4 +32,5 @@ tasks.jar {
         attributes["Main-Class"] = "io.github.gaming32.squidbeatz2.Main"
     }
     from(configurations.runtimeClasspath.get().files.map { if (it.isDirectory) it else zipTree(it) })
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }
