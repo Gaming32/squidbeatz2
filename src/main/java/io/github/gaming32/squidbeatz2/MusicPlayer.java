@@ -1,5 +1,6 @@
 package io.github.gaming32.squidbeatz2;
 
+import io.github.gaming32.squidbeatz2.game.assets.SongInfo;
 import io.github.gaming32.squidbeatz2.msbt.MSBTReader;
 import io.github.gaming32.squidbeatz2.util.ClipPositionHelper;
 import io.github.gaming32.squidbeatz2.util.Util;
@@ -17,7 +18,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
-import java.awt.*;
+import java.awt.SplashScreen;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -58,18 +60,17 @@ public class MusicPlayer {
         final Path octoExpansionPath = suyuDir.resolve("dump/0100F8F0000A3065/romfs");
         final boolean octoExpansionDumped = Files.exists(octoExpansionPath);
 
-        final Map<String, String> songs = getSongIds(romfsPath);
-        final Int2ObjectMap<String> songNumberIds = new Int2ObjectOpenHashMap<>(songs.size());
-        songs.entrySet()
-            .stream()
-            .sorted(Map.Entry.comparingByValue())
-            .forEach(entry -> {
-                final int id = songNumberIds.size() + 1;
-                songNumberIds.put(id, entry.getKey());
-                if (octoExpansionDumped || Files.exists(romfsPath.resolve(entry.getValue()))) {
-                    System.out.printf("%2s -- %s\n", id, entry.getValue());
-                }
-            });
+        final List<SongInfo> songs = SongInfo.loadFromCompressedArchive(romfsPath.resolve(Constants.SONG_INFO_PATH));
+
+        final Map<String, String> songNames = getSongIds(romfsPath);
+        final Int2ObjectMap<String> songNumberIds = new Int2ObjectOpenHashMap<>(songNames.size());
+        for (final SongInfo song : songs) {
+            final int id = songNumberIds.size() + 1;
+            songNumberIds.put(id, song.songId());
+            if (octoExpansionDumped || Files.exists(Path.of(Constants.STREAM_PATH, song.songId() + ".bfstm"))) {
+                System.out.printf("%2s -- %s\n", id, songNames.get(song.songId()));
+            }
+        }
         System.out.print("Enter a song ID: ");
 
         final BufferedReader inReader = new BufferedReader(new InputStreamReader(System.in, Util.consoleCharset()));

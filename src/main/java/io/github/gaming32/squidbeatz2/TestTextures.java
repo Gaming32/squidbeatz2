@@ -16,7 +16,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-public class Test {
+public class TestTextures {
     public static void main(String[] args) throws IOException {
         final SARCFile sarc;
         try (InputStream is = new Yaz0InputStream(Files.newInputStream(
