@@ -62,7 +62,7 @@ public class MusicPlayer {
 
         final List<SongInfo> songs = SongInfo.loadFromCompressedArchive(romfsPath.resolve(Constants.SONG_INFO_PATH));
 
-        final Map<String, String> songNames = getSongIds(romfsPath);
+        final Map<String, String> songNames = getSongNames(romfsPath);
         final Int2ObjectMap<String> songNumberIds = new Int2ObjectOpenHashMap<>(songNames.size());
         for (final SongInfo song : songs) {
             final int id = songNumberIds.size() + 1;
@@ -129,7 +129,7 @@ public class MusicPlayer {
         System.out.println();
     }
 
-    public static Map<String, String> getSongIds(Path romfsPath) throws IOException {
+    public static Map<String, String> getSongNames(Path romfsPath) throws IOException {
         final SARCFile allTranslations;
         try (InputStream is = new Yaz0InputStream(
             Files.newInputStream(romfsPath.resolve(Constants.ENGLISH_TRANSLATIONS_PATH))
