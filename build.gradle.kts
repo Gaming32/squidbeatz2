@@ -20,6 +20,7 @@ dependencies {
     implementation("com.google.guava:guava:33.1.0-jre")
     implementation("io.github.gaming32:generators:1.0")
     implementation("io.github.gaming32:szs-lib:1.0.1")
+    implementation("net.java.dev.jna:jna:5.14.0")
     compileOnly("org.jetbrains:annotations:24.1.0")
 }
 

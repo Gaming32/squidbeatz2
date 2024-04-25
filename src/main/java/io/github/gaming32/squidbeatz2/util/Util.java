@@ -9,6 +9,8 @@ import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -37,6 +39,22 @@ public class Util {
 
     public static String readString(InputStream is, int length) throws IOException {
         return new String(is.readNBytes(length), StandardCharsets.ISO_8859_1);
+    }
+
+    public static long readLong(InputStream is, boolean bigEndian) throws IOException {
+        return ByteBuffer.wrap(is.readNBytes(8))
+            .order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN)
+            .getLong();
+    }
+
+    public static long[] readLongArray(InputStream is, boolean bigEndian, int length) throws IOException {
+        final ByteBuffer buffer = ByteBuffer.wrap(is.readNBytes(8 * length))
+            .order(bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN);
+        final long[] result = new long[length];
+        for (int i = 0; i < length; i++) {
+            result[i] = buffer.getLong();
+        }
+        return result;
     }
 
     public static void writeInt(OutputStream os, int value, boolean bigEndian) throws IOException {
