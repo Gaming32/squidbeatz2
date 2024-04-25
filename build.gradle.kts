@@ -31,6 +31,7 @@ tasks.test {
 tasks.jar {
     manifest {
         attributes["Main-Class"] = "io.github.gaming32.squidbeatz2.MusicPlayer"
+        attributes["SplashScreen-Image"] = "Title.png"
     }
     from(configurations.runtimeClasspath.get().files.map { if (it.isDirectory) it else zipTree(it) })
     duplicatesStrategy = DuplicatesStrategy.WARN

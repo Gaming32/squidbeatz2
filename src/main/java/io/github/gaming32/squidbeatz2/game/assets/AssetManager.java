@@ -12,6 +12,7 @@ import io.github.gaming32.szslib.yaz0.Yaz0InputStream;
 
 import java.awt.Font;
 import java.awt.FontFormatException;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +29,8 @@ import java.util.zip.DeflaterOutputStream;
 public class AssetManager {
     private static List<SongInfo> songs;
     private static Map<String, String> songNames;
-    private static Map<String, SongAudio> songAudio;
     private static Font gameFont;
+    private static Map<String, SongAudio> songAudio;
 
     /**
      * @return The nanoseconds taken loading assets
@@ -38,7 +39,7 @@ public class AssetManager {
         final long start = System.nanoTime();
 
         final var songsFuture = CompletableFuture.supplyAsync(() -> {
-            try (InputStream is = fileGetter.apply(Constants.SONG_INFO_PATH)) {
+            try (InputStream is = new BufferedInputStream(fileGetter.apply(Constants.SONG_INFO_PATH))) {
                 return SongInfo.loadFromCompressedArchive(is);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -48,7 +49,7 @@ public class AssetManager {
         final var songNamesFuture = CompletableFuture.supplyAsync(() -> {
             try {
                 final SARCFile allTranslations;
-                try (InputStream is = new Yaz0InputStream(fileGetter.apply(Constants.ENGLISH_TRANSLATIONS_PATH))) {
+                try (InputStream is = new Yaz0InputStream(new BufferedInputStream(fileGetter.apply(Constants.ENGLISH_TRANSLATIONS_PATH)))) {
                     allTranslations = SARCFile.read(is);
                 }
                 try (InputStream is = allTranslations.getInputStream(Constants.MUSIC_NAMES_PATH)) {
@@ -59,10 +60,8 @@ public class AssetManager {
             }
         });
 
-        final var songAudioFuture = songsFuture.thenCompose(songs -> getSongAudio(fileGetter, songs));
-
         final var gameFontFuture = CompletableFuture.supplyAsync(() -> {
-            try (InputStream is = new Yaz0InputStream(fileGetter.apply(Constants.FONTS_PATH))) {
+            try (InputStream is = new Yaz0InputStream(new BufferedInputStream(fileGetter.apply(Constants.FONTS_PATH)))) {
                 final SARCFile sarc = SARCFile.read(is);
                 try (InputStream fontIn = sarc.getInputStream(Constants.FONT_PATH)) {
                     return BFTTF.createFont(fontIn);
@@ -74,10 +73,12 @@ public class AssetManager {
             }
         });
 
+        final var songAudioFuture = songsFuture.thenCompose(songs -> getSongAudio(fileGetter, songs));
+
         songs = songsFuture.join();
         songNames = songNamesFuture.join();
-        songAudio = songAudioFuture.join();
         gameFont = gameFontFuture.join();
+        songAudio = songAudioFuture.join();
 
         return System.nanoTime() - start;
     }
