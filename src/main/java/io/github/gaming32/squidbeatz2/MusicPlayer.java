@@ -1,6 +1,7 @@
 package io.github.gaming32.squidbeatz2;
 
 import io.github.gaming32.squidbeatz2.msbt.MSBTReader;
+import io.github.gaming32.squidbeatz2.util.ClipPositionHelper;
 import io.github.gaming32.squidbeatz2.util.Util;
 import io.github.gaming32.squidbeatz2.util.seekable.SeekableChannelInputStream;
 import io.github.gaming32.squidbeatz2.vgaudio.containers.nintendoware.BCFstmReader;
@@ -16,6 +17,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -26,8 +28,13 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class Main {
+public class MusicPlayer {
     public static void main(String[] args) throws Exception {
+        try {
+            SplashScreen.getSplashScreen().close();
+        } catch (NoClassDefFoundError | NullPointerException | UnsupportedOperationException ignored) {
+        }
+
         final String dataParentEnvName = Constants.IS_WINDOWS ? "APPDATA" : "XDG_DATA_HOME";
         final String dataParentEnv = System.getenv(dataParentEnvName);
         final Path dataParent = dataParentEnv != null
@@ -98,19 +105,19 @@ public class Main {
         ((FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue(20f * (float)Math.log10(0.3));
 
         final Pcm16Format pcm16 = data.getFormat(Pcm16Format.class);
+        final ClipPositionHelper positionHelper = new ClipPositionHelper(clip);
         if (pcm16.isLooping()) {
-            clip.setLoopPoints(pcm16.getLoopStart(), pcm16.getLoopEnd() - 1);
-            clip.loop(Clip.LOOP_CONTINUOUSLY);
+            positionHelper.loop(pcm16.getLoopStart(), pcm16.getLoopEnd() - 1);
         }
 
         clip.start();
         final long length = clip.getMicrosecondLength();
         do {
-            final long position = clip.getMicrosecondPosition() % length; // Position doesn't reset on loop
-            final int percentage = (int)Math.round((double)position / length * 65);
+            final long position = positionHelper.getMicrosecondPosition();
+            final int progressBar = (int)Math.round((double)position / length * 65);
             System.out.print(new StringBuilder("\r[")
-                .repeat('=', percentage)
-                .repeat(' ', 65 - percentage)
+                .repeat('=', progressBar)
+                .repeat(' ', 65 - progressBar)
                 .append("] ")
                 .append(formatTimeMicros(position))
                 .append(" / ")

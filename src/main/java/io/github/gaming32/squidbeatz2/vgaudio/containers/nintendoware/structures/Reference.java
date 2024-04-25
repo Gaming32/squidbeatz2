@@ -4,7 +4,6 @@ import io.github.gaming32.squidbeatz2.util.Util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
 
 public class Reference {
     private final int type;
@@ -55,28 +54,4 @@ public class Reference {
     public int baseOffset() {
         return baseOffset;
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj == null || obj.getClass() != this.getClass()) return false;
-        var that = (Reference)obj;
-        return this.type == that.type &&
-               this.offset == that.offset &&
-               this.baseOffset == that.baseOffset;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(type, offset, baseOffset);
-    }
-
-    @Override
-    public String toString() {
-        return "Reference[" +
-               "type=" + type + ", " +
-               "offset=" + offset + ", " +
-               "baseOffset=" + baseOffset + ']';
-    }
-
 }
