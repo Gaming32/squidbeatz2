@@ -1,4 +1,4 @@
-package io.github.gaming32.squidbeatz2;
+package io.github.gaming32.squidbeatz2.test;
 
 import io.github.gaming32.squidbeatz2.bntx.BntxFile;
 import io.github.gaming32.squidbeatz2.lightbfres.BfresExternalFilesLoader;
