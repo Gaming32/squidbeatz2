@@ -110,7 +110,6 @@ public class GameFrame extends JFrame {
             g.setFont(AssetManager.getGameFont().deriveFont(32f));
             g.setColor(Color.WHITE);
             g.drawString(Long.toString(time), 160, 100);
-            g.drawImage(danceImage, 200, 200, danceImage.getWidth() * 2, danceImage.getHeight() * 2, null);
 
             final ThemeAssets themeAssets = AssetManager.getThemeAssets(theme);
 
@@ -134,6 +133,8 @@ public class GameFrame extends JFrame {
             };
             g.drawImage(themeAssets.caption, captionPos.x, captionPos.y, null);
             g.drawImage(themeAssets.captionStyleChange, captionPos.x, captionPos.y + themeAssets.caption.getHeight(), null);
+
+            g.drawImage(danceImage, 1159, 177, danceImage.getWidth() * 2, danceImage.getHeight() * 2, null);
 
             g.drawImage(themeAssets.mask, 0, 0, null);
         }
