@@ -15,6 +15,7 @@ import io.github.gaming32.squidbeatz2.vgaudio.formats.AudioData;
 import io.github.gaming32.squidbeatz2.vgaudio.formats.pcm16.Pcm16Format;
 import io.github.gaming32.szslib.sarc.SARCFile;
 import io.github.gaming32.szslib.yaz0.Yaz0InputStream;
+import it.unimi.dsi.fastutil.floats.FloatConsumer;
 import org.apache.commons.io.function.Uncheck;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.DeflaterOutputStream;
@@ -48,7 +50,8 @@ public class AssetManager {
     /**
      * @return The nanoseconds taken loading assets
      */
-    public static long loadAssets(FileGetter<?> fileGetter) {
+    public static long loadAssets(FileGetter<?> fileGetter, FloatConsumer progressConsumer) {
+        final ProgressManager progressManager = new ProgressManager(progressConsumer, 6);
         final long start = System.nanoTime();
 
         final var songsFuture = CompletableFuture.supplyAsync(() -> {
@@ -57,7 +60,7 @@ public class AssetManager {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        });
+        }).thenApply(progressManager::taskDone);
 
         final var songNamesFuture = CompletableFuture.supplyAsync(() -> {
             try {
@@ -71,11 +74,13 @@ public class AssetManager {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        });
+        }).thenApply(progressManager::taskDone);
 
-        final var themeAssetsFuture = loadThemeAssets(fileGetter);
+        final var themeAssetsFuture = loadThemeAssets(fileGetter, progressManager)
+            .thenApply(progressManager::taskDone);
 
-        final var dancesFuture = loadDances(fileGetter);
+        final var dancesFuture = loadDances(fileGetter, progressManager)
+            .thenApply(progressManager::taskDone);
 
         final var gameFontFuture = CompletableFuture.supplyAsync(() -> {
             try (InputStream is = new Yaz0InputStream(new BufferedInputStream(fileGetter.apply(Constants.FONTS_PATH)))) {
@@ -88,9 +93,11 @@ public class AssetManager {
             } catch (FontFormatException e) {
                 throw new IllegalStateException(e);
             }
-        });
+        }).thenApply(progressManager::taskDone);
 
-        final var songAudioFuture = songsFuture.thenCompose(songs -> loadSongAudio(fileGetter, songs));
+        final var songAudioFuture = songsFuture
+            .thenCompose(songs -> loadSongAudio(fileGetter, songs, progressManager))
+            .thenApply(progressManager::taskDone);
 
         songs = songsFuture.join();
         songNames = songNamesFuture.join();
@@ -99,10 +106,12 @@ public class AssetManager {
         themeAssets = themeAssetsFuture.join();
         dances = dancesFuture.join();
 
+        progressManager.complete();
         return System.nanoTime() - start;
     }
 
-    private static CompletableFuture<Map<GameTheme, ThemeAssets>> loadThemeAssets(FileGetter<?> fileGetter) {
+    private static CompletableFuture<Map<GameTheme, ThemeAssets>> loadThemeAssets(FileGetter<?> fileGetter, ProgressManager progressManager) {
+        progressManager.addTasks(Dance.values().length);
         final List<CompletableFuture<Map.Entry<GameTheme, ThemeAssets>>> futures = new ArrayList<>(GameTheme.values().length);
         for (final GameTheme theme : GameTheme.values()) {
             futures.add(CompletableFuture.supplyAsync(() -> {
@@ -113,12 +122,13 @@ public class AssetManager {
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-            }));
+            }).thenApply(progressManager::taskDone));
         }
         return collectMapFutures(futures);
     }
 
-    private static CompletableFuture<Map<Dance, List<BufferedImage>>> loadDances(FileGetter<?> fileGetter) {
+    private static CompletableFuture<Map<Dance, List<BufferedImage>>> loadDances(FileGetter<?> fileGetter, ProgressManager progressManager) {
+        progressManager.addTasks(Dance.values().length);
         final List<CompletableFuture<Map.Entry<Dance, List<BufferedImage>>>> futures = new ArrayList<>(Dance.values().length);
         for (final Dance dance : Dance.values()) {
             futures.add(CompletableFuture.supplyAsync(() -> {
@@ -133,12 +143,15 @@ public class AssetManager {
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-            }));
+            }).thenApply(progressManager::taskDone));
         }
         return collectMapFutures(futures);
     }
 
-    private static CompletableFuture<Map<String, SongAudio>> loadSongAudio(FileGetter<?> fileGetter, List<SongInfo> songs) {
+    private static CompletableFuture<Map<String, SongAudio>> loadSongAudio(
+        FileGetter<?> fileGetter, List<SongInfo> songs, ProgressManager progressManager
+    ) {
+        progressManager.addTasks(songs.size());
         final List<CompletableFuture<Map.Entry<String, SongAudio>>> futures = new ArrayList<>(songs.size());
         for (final SongInfo song : songs) {
             futures.add(CompletableFuture.supplyAsync(() -> {
@@ -161,7 +174,7 @@ public class AssetManager {
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-            }));
+            }).thenApply(progressManager::taskDone));
         }
         return collectMapFutures(futures);
     }
@@ -221,5 +234,33 @@ public class AssetManager {
 
     public static List<BufferedImage> getDance(Dance dance) {
         return dances.get(dance);
+    }
+
+    private static final class ProgressManager {
+        final FloatConsumer consumer;
+        final AtomicInteger progress = new AtomicInteger();
+        final AtomicInteger maxProgress;
+
+        ProgressManager(FloatConsumer consumer, int baseTasks) {
+            this.consumer = consumer;
+            maxProgress = new AtomicInteger(baseTasks);
+        }
+
+        <T> T taskDone(T t) {
+            accept(progress.incrementAndGet(), maxProgress.get());
+            return t;
+        }
+
+        void addTasks(int count) {
+            accept(progress.get(), maxProgress.addAndGet(count));
+        }
+
+        void complete() {
+            consumer.accept(1f);
+        }
+
+        private void accept(int progress, int maxProgress) {
+            consumer.accept((float)progress / maxProgress);
+        }
     }
 }

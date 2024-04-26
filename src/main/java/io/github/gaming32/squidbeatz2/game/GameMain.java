@@ -3,9 +3,14 @@ package io.github.gaming32.squidbeatz2.game;
 import io.github.gaming32.squidbeatz2.Constants;
 import io.github.gaming32.squidbeatz2.game.assets.AssetManager;
 import io.github.gaming32.squidbeatz2.game.assets.FileGetter;
+import it.unimi.dsi.fastutil.floats.FloatConsumer;
 
 import javax.swing.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
+import java.awt.SplashScreen;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -21,7 +26,7 @@ public class GameMain {
         }
 
         System.out.println("Loading assets...");
-        final long assetLoadTime = AssetManager.loadAssets(fileGetter);
+        final long assetLoadTime = AssetManager.loadAssets(fileGetter, createProgressConsumer());
         System.out.println("Loaded assets in " + Duration.ofNanos(assetLoadTime));
 
         GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(AssetManager.getGameFont());
@@ -53,5 +58,22 @@ public class GameMain {
             result = result.orElse(FileGetter.ofDirectory(octoExpansionPath));
         }
         return result;
+    }
+
+    private static FloatConsumer createProgressConsumer() {
+        final SplashScreen splash = SplashScreen.getSplashScreen();
+        if (splash == null) {
+            return p -> {};
+        }
+        return progress -> {
+            synchronized (splash) {
+                final Graphics2D g = splash.createGraphics();
+                final Dimension bounds = splash.getSize();
+                g.setColor(Color.GREEN);
+                g.fillRect(0, bounds.height - 10, (int)(bounds.width * progress), 10);
+                g.dispose();
+                splash.update();
+            }
+        };
     }
 }
