@@ -23,6 +23,7 @@ import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
@@ -149,7 +150,6 @@ public class GameFrame extends JFrame {
             g2d.fillRect(0, 0, getWidth(), getHeight());
             g2d.scale(getWidth() / 1920.0, getHeight() / 1080.0);
             g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            g2d.setFont(AssetManager.getGameFont().deriveFont(32f));
             draw(g2d);
             g2d.dispose();
         }
@@ -189,7 +189,7 @@ public class GameFrame extends JFrame {
             } else {
                 playStatusImage = themeAssets.playIconDark;
             }
-            g.drawImage(playStatusImage, 150, 82, null);
+            g.drawImage(playStatusImage, 190, 82, null);
 
             final List<BufferedImage> danceFrames = AssetManager.getDance(songInfo.dance());
             final int danceFrame;
@@ -204,6 +204,16 @@ public class GameFrame extends JFrame {
             }
             final BufferedImage danceImage = danceFrames.get(danceFrame);
             g.drawImage(danceImage, 1159, 177, danceImage.getWidth() * 2, danceImage.getHeight() * 2, null);
+
+
+            g.setColor(new Color(0xE02E9D));
+            final AffineTransform oldTransform = g.getTransform();
+            g.scale(0.67, 1);
+            g.setFont(AssetManager.getGameFont().deriveFont(64f));
+            final int visualSongIndex = songIndex < 57 ? songIndex + 1 : songIndex - 57 + 80;
+            g.drawString(visualSongIndex + ".", 498, 128);
+            g.drawString(AssetManager.getSongName(songInfo.songId()), 600, 128);
+            g.setTransform(oldTransform);
 
             g.drawImage(themeAssets.mask, 0, 0, null);
         }
