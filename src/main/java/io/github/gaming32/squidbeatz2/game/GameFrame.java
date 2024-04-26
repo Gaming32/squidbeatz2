@@ -31,6 +31,7 @@ public class GameFrame extends JFrame {
     public static final int FRAME_TIME_MILLIS = 1000 / 60;
     public static final int FRAME_TIME_NANOS = 1_000_000_000 / 60;
     public static final int DANCE_FRAME_TIME = 1_000_000_000 / 30;
+    public static final int PLAY_BLINK_TIME = 1_500_000_000;
 
     private final GamePanel gamePanel = new GamePanel();
     private final Timer timer = new Timer(FRAME_TIME_MILLIS, this::updateScreen);
@@ -66,7 +67,8 @@ public class GameFrame extends JFrame {
                 } else if (e.getKeyCode() == KeyEvent.VK_T) { // TODO: These keybinds need to be remappable testing code
                     theme = GameTheme.values()[(theme.ordinal() + 1) % GameTheme.values().length];
                 } else if (e.getKeyCode() == KeyEvent.VK_K) {
-                    if (clip.isRunning()) {
+                    if (songStartTime > 0) {
+                        songStartTime = 0;
                         clip.stop();
                     } else {
                         playSong();
@@ -74,7 +76,7 @@ public class GameFrame extends JFrame {
                 } else if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) {
                     final int shift = e.getKeyCode() == KeyEvent.VK_LEFT ? -1 : 1;
                     songIndex = Math.floorMod(songIndex + shift, AssetManager.getSongs().size());
-                    if (clip.isRunning()) {
+                    if (songStartTime > 0) {
                         playSong();
                     }
                 }
@@ -143,8 +145,11 @@ public class GameFrame extends JFrame {
         @Override
         public void paint(Graphics g) {
             final Graphics2D g2d = (Graphics2D)g;
+            g2d.setColor(Color.BLACK);
+            g2d.fillRect(0, 0, getWidth(), getHeight());
             g2d.scale(getWidth() / 1920.0, getHeight() / 1080.0);
             g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2d.setFont(AssetManager.getGameFont().deriveFont(32f));
             draw(g2d);
             g2d.dispose();
         }
@@ -153,26 +158,6 @@ public class GameFrame extends JFrame {
             final long time = System.nanoTime() - gameStart;
             final long playTime = System.nanoTime() - songStartTime;
             final SongInfo songInfo = AssetManager.getSongs().get(songIndex);
-            final List<BufferedImage> danceFrames = AssetManager.getDance(songInfo.dance());
-            final int danceFrame;
-            if (songInfo.dance() != lastDance) {
-                lastDance = songInfo.dance();
-                lastDanceFrame = dancePauseFrame = 0;
-            }
-            if (clip.isRunning()) {
-                lastDanceFrame = danceFrame = (int)((playTime / DANCE_FRAME_TIME + dancePauseFrame) % danceFrames.size());
-            } else {
-                danceFrame = dancePauseFrame = lastDanceFrame;
-            }
-            final BufferedImage danceImage = danceFrames.get(danceFrame);
-
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, 1920, 1080);
-
-            g.setFont(AssetManager.getGameFont().deriveFont(32f));
-            g.setColor(Color.WHITE);
-            g.drawString(Long.toString(time), 160, 100);
-
             final ThemeAssets themeAssets = AssetManager.getThemeAssets(theme);
 
             if (theme.fullscreenManual) {
@@ -196,6 +181,28 @@ public class GameFrame extends JFrame {
             g.drawImage(themeAssets.caption, captionPos.x, captionPos.y, null);
             g.drawImage(themeAssets.captionStyleChange, captionPos.x, captionPos.y + themeAssets.caption.getHeight(), null);
 
+            final BufferedImage playStatusImage;
+            if (songStartTime == 0) {
+                playStatusImage = themeAssets.stopIcon;
+            } else if (time % (PLAY_BLINK_TIME * 2L) < PLAY_BLINK_TIME) {
+                playStatusImage = themeAssets.playIcon;
+            } else {
+                playStatusImage = themeAssets.playIconDark;
+            }
+            g.drawImage(playStatusImage, 150, 82, null);
+
+            final List<BufferedImage> danceFrames = AssetManager.getDance(songInfo.dance());
+            final int danceFrame;
+            if (songInfo.dance() != lastDance) {
+                lastDance = songInfo.dance();
+                lastDanceFrame = dancePauseFrame = 0;
+            }
+            if (clip.isRunning()) {
+                lastDanceFrame = danceFrame = (int)((playTime / DANCE_FRAME_TIME + dancePauseFrame) % danceFrames.size());
+            } else {
+                danceFrame = dancePauseFrame = lastDanceFrame;
+            }
+            final BufferedImage danceImage = danceFrames.get(danceFrame);
             g.drawImage(danceImage, 1159, 177, danceImage.getWidth() * 2, danceImage.getHeight() * 2, null);
 
             g.drawImage(themeAssets.mask, 0, 0, null);
