@@ -67,7 +67,7 @@ public class MusicPlayer {
         for (final SongInfo song : songs) {
             final int id = songNumberIds.size() + 1;
             songNumberIds.put(id, song.songId());
-            if (octoExpansionDumped || Files.exists(Path.of(Constants.STREAM_PATH, song.songId() + ".bfstm"))) {
+            if (octoExpansionDumped || Files.exists(romfsPath.resolve(Constants.STREAM_PATH + '/' + song.songId() + ".bfstm"))) {
                 System.out.printf("%2s -- %s\n", id, songNames.get(song.songId()));
             }
         }
@@ -88,6 +88,11 @@ public class MusicPlayer {
             System.out.println("Unknown song ID: " + songNumber);
             System.exit(1);
         }
+
+//        final Amta amta;
+//        try (var is = new SeekableChannelInputStream(Files.newByteChannel(romfsPath.resolve(Constants.BARS_PATH)))) {
+//            amta = BarsReader.readAmtaEntries(is).get(songId);
+//        }
 
         final Path relSong = Path.of(Constants.STREAM_PATH, songId + ".bfstm");
         Path songFile = romfsPath.resolve(relSong);

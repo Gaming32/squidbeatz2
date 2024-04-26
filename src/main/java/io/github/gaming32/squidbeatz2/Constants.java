@@ -11,6 +11,7 @@ public class Constants {
     public static final String SONG_INFO_PATH = "Etc/MiniGame.szs";
     public static final String FONTS_PATH = "Font/ScalableFont.szs";
     public static final String FONT_PATH = "BlitzMain.bfotf";
+    public static final String BARS_PATH = "Sound/Resource/BgmMiniGame.bars";
 
     public static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
 }
