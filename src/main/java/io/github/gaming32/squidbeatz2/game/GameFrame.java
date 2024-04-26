@@ -2,9 +2,17 @@ package io.github.gaming32.squidbeatz2.game;
 
 import io.github.gaming32.squidbeatz2.Constants;
 import io.github.gaming32.squidbeatz2.game.assets.AssetManager;
+import io.github.gaming32.squidbeatz2.game.assets.Dance;
+import io.github.gaming32.squidbeatz2.game.assets.SongAudio;
 import io.github.gaming32.squidbeatz2.game.assets.SongInfo;
 import io.github.gaming32.squidbeatz2.game.assets.ThemeAssets;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.*;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -16,6 +24,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.List;
 
 public class GameFrame extends JFrame {
@@ -25,8 +34,10 @@ public class GameFrame extends JFrame {
 
     private final GamePanel gamePanel = new GamePanel();
     private final Timer timer = new Timer(FRAME_TIME_MILLIS, this::updateScreen);
+    private final Clip clip;
 
     private int songIndex;
+    private long songStartTime;
     private GameTheme theme = GameTheme.DEFAULT;
 
     public GameFrame() {
@@ -52,11 +63,29 @@ public class GameFrame extends JFrame {
                         setVisible(true);
                         setExtendedState(state | MAXIMIZED_BOTH);
                     }
-                } else if (e.getKeyCode() == KeyEvent.VK_T) { // TODO: Temp testing code
+                } else if (e.getKeyCode() == KeyEvent.VK_T) { // TODO: These keybinds need to be remappable testing code
                     theme = GameTheme.values()[(theme.ordinal() + 1) % GameTheme.values().length];
+                } else if (e.getKeyCode() == KeyEvent.VK_K) {
+                    if (clip.isRunning()) {
+                        clip.stop();
+                    } else {
+                        playSong();
+                    }
+                } else if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                    final int shift = e.getKeyCode() == KeyEvent.VK_LEFT ? -1 : 1;
+                    songIndex = Math.floorMod(songIndex + shift, AssetManager.getSongs().size());
+                    if (clip.isRunning()) {
+                        playSong();
+                    }
                 }
             }
         });
+
+        try {
+            clip = AudioSystem.getClip();
+        } catch (LineUnavailableException e) {
+            throw new IllegalStateException(e);
+        }
 
         setResizable(false);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -65,6 +94,26 @@ public class GameFrame extends JFrame {
 
     private void updateScreen(ActionEvent e) {
         gamePanel.repaint();
+    }
+
+    private void playSong() {
+        clip.close();
+        final SongInfo song = AssetManager.getSongs().get(songIndex);
+        final SongAudio audio = AssetManager.getSongAudio(song.songId());
+        if (audio == null) return;
+        try {
+            final AudioInputStream ais = audio.getAudioInputStream();
+            clip.open(ais);
+            ((FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue(20f * (float)Math.log10(Constants.VOLUME));
+            if (audio.loop()) {
+                clip.setLoopPoints(audio.loopStart(), audio.loopEnd() - 1);
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+            }
+            clip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            throw new RuntimeException(e);
+        }
+        songStartTime = System.nanoTime();
     }
 
     @Override
@@ -83,6 +132,8 @@ public class GameFrame extends JFrame {
 
     private class GamePanel extends JPanel {
         final long gameStart = System.nanoTime();
+        int lastDanceFrame, dancePauseFrame;
+        Dance lastDance;
 
         GamePanel() {
             setBackground(Color.BLACK);
@@ -100,9 +151,20 @@ public class GameFrame extends JFrame {
 
         private void draw(Graphics2D g) {
             final long time = System.nanoTime() - gameStart;
+            final long playTime = System.nanoTime() - songStartTime;
             final SongInfo songInfo = AssetManager.getSongs().get(songIndex);
-            final List<BufferedImage> dance = AssetManager.getDance(songInfo.dance());
-            final BufferedImage danceImage = dance.get((int)(time / DANCE_FRAME_TIME % dance.size()));
+            final List<BufferedImage> danceFrames = AssetManager.getDance(songInfo.dance());
+            final int danceFrame;
+            if (songInfo.dance() != lastDance) {
+                lastDance = songInfo.dance();
+                lastDanceFrame = dancePauseFrame = 0;
+            }
+            if (clip.isRunning()) {
+                lastDanceFrame = danceFrame = (int)((playTime / DANCE_FRAME_TIME + dancePauseFrame) % danceFrames.size());
+            } else {
+                danceFrame = dancePauseFrame = lastDanceFrame;
+            }
+            final BufferedImage danceImage = danceFrames.get(danceFrame);
 
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, 1920, 1080);

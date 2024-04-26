@@ -3,6 +3,7 @@ package io.github.gaming32.squidbeatz2.game.assets;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +15,6 @@ public record SongAudio(boolean loop, int loopStart, int loopEnd, byte[] compres
     }
 
     public AudioInputStream getAudioInputStream() throws UnsupportedAudioFileException, IOException {
-        return AudioSystem.getAudioInputStream(getInputStream());
+        return AudioSystem.getAudioInputStream(new BufferedInputStream(getInputStream()));
     }
 }

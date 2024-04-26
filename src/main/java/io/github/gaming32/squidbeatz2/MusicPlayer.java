@@ -103,7 +103,7 @@ public class MusicPlayer {
         final AudioInputStream ais = AudioSystem.getAudioInputStream(new ByteArrayInputStream(songAudio));
         final Clip clip = AudioSystem.getClip();
         clip.open(ais);
-        ((FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue(20f * (float)Math.log10(0.3));
+        ((FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue(20f * (float)Math.log10(Constants.VOLUME));
 
         final Pcm16Format pcm16 = data.getFormat(Pcm16Format.class);
         final ClipPositionHelper positionHelper = new ClipPositionHelper(clip);

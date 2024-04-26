@@ -4,6 +4,7 @@ import java.util.Locale;
 
 public class Constants {
     public static final String TITLE = "Squid Beatz 2";
+    public static final float VOLUME = 0.3f;
 
     public static final String STREAM_PATH = "Sound/Resource/Stream";
     public static final String ENGLISH_TRANSLATIONS_PATH = "Message/CommonMsg_USen.release.szs";
