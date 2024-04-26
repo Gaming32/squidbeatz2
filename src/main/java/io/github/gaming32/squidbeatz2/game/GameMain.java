@@ -30,6 +30,8 @@ public class GameMain {
         System.out.println("Loaded assets in " + Duration.ofNanos(assetLoadTime));
 
         GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(AssetManager.getGameFont());
+
+        SwingUtilities.invokeLater(() -> new GameFrame().setVisible(true));
     }
 
     public static FileGetter<?> createFileGetter() {

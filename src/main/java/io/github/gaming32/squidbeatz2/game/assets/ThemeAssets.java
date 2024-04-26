@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 
 public class ThemeAssets {
     public BufferedImage caption;
+    public BufferedImage captionStyleChange;
     public BufferedImage manual;
     public BufferedImage mask;
 
@@ -15,6 +16,7 @@ public class ThemeAssets {
             final BufferedImage image = TextureConverter.toBufferedImage(texture);
             switch (texture.name) {
                 case "Base_Caption" -> caption = image;
+                case "Caption_StyleChange" -> captionStyleChange = image;
                 case "Base_Manual" -> manual = image;
                 case "Mask" -> mask = image;
             }

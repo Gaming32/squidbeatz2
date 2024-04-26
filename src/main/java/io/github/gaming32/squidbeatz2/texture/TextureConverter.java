@@ -30,7 +30,11 @@ public class TextureConverter {
             case SurfaceFormat.R5_G5_B5_A1_UNORM -> throw new UnsupportedOperationException("R5G5B5A1_UNORM");
         }
 
-        return decodeTex(data, width, height, texture.format);
+        BufferedImage result = decodeTex(data, width, height, texture.format);
+        if (result != null && (result.getWidth() != width || result.getHeight() != height)) {
+            result = result.getSubimage(0, 0, width, height);
+        }
+        return result;
     }
 
     private static BufferedImage decodeTex(byte[] data, int width, int height, int format) {
