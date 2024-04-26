@@ -89,11 +89,6 @@ public class MusicPlayer {
             System.exit(1);
         }
 
-//        final Amta amta;
-//        try (var is = new SeekableChannelInputStream(Files.newByteChannel(romfsPath.resolve(Constants.BARS_PATH)))) {
-//            amta = BarsReader.readAmtaEntries(is).get(songId);
-//        }
-
         final Path relSong = Path.of(Constants.STREAM_PATH, songId + ".bfstm");
         Path songFile = romfsPath.resolve(relSong);
         if (!Files.exists(songFile)) {
