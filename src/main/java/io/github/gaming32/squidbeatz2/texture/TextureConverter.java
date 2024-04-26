@@ -37,8 +37,8 @@ public class TextureConverter {
         return switch (format) {
             case SurfaceFormat.R8_G8_B8_A8_UNORM, SurfaceFormat.R8_G8_B8_A8_SRGB ->
                 getBufferedImage(convertBgraToRgba(data), width, height);
-            case SurfaceFormat.BC1_UNORM -> throw new UnsupportedOperationException("BC1_UNORM");
-            case SurfaceFormat.BC1_SRGB -> throw new UnsupportedOperationException("BC1_UNORM_SRGB");
+            case SurfaceFormat.BC1_UNORM -> DDSCompressor.decompressBc1(data, width, height, false);
+            case SurfaceFormat.BC1_SRGB -> DDSCompressor.decompressBc1(data, width, height, true);
             case SurfaceFormat.BC3_SRGB -> DDSCompressor.decompressBc3(data, width, height, false);
             case SurfaceFormat.BC3_UNORM -> DDSCompressor.decompressBc3(data, width, height, true);
             case SurfaceFormat.BC4_UNORM -> throw new UnsupportedOperationException("BC4_UNORM");

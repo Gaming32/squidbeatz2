@@ -1,9 +1,38 @@
 package io.github.gaming32.squidbeatz2.texture;
 
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 
 public class DDSCompressor {
+    public static BufferedImage decompressBc1(byte[] data, int width, int height, boolean isSrgb) {
+        final int w = (width + 3) / 4;
+        final int h = (height + 3) / 4;
+
+        final byte[] output = new byte[w * h * 64];
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                final int iOffs = (y * w + x) * 8;
+
+                final byte[] tile = bCnDecodeTile(data, iOffs, true);
+
+                int tOffset = 0;
+
+                for (int ty = 0; ty < 4; ty++) {
+                    for (int tx = 0; tx < 4; tx++) {
+                        int oOffset = (x * 4 + tx + (y * 4 + ty) * w * 4) * 4;
+
+                        output[oOffset++] = tile[tOffset++];
+                        output[oOffset++] = tile[tOffset++];
+                        output[oOffset++] = tile[tOffset++];
+                        output[oOffset++] = tile[tOffset++];
+                    }
+                }
+            }
+        }
+        return TextureConverter.getBufferedImage(output, w * 4, h * 4);
+    }
+
     public static BufferedImage decompressBc3(byte[] data, int width, int height, boolean isSrgb) {
         final int w = (width + 3) / 4;
         final int h = (height + 3) / 4;

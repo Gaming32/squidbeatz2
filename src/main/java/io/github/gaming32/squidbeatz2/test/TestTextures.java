@@ -37,7 +37,7 @@ public class TestTextures {
             .map(i -> Uncheck.apply(new BntxFile()::load, i))
             .map(f -> f.textures)
             .flatMap(List::stream)
-            .filter(t -> t.name.equals("Title"))
+            .filter(t -> t.name.equals("Base_Manual"))
             .findFirst()
             .orElseThrow();
         System.out.println(texture.name);

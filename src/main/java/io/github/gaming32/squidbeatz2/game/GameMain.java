@@ -4,16 +4,27 @@ import io.github.gaming32.squidbeatz2.Constants;
 import io.github.gaming32.squidbeatz2.game.assets.AssetManager;
 import io.github.gaming32.squidbeatz2.game.assets.FileGetter;
 
+import javax.swing.*;
+import java.awt.GraphicsEnvironment;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 
 public class GameMain {
     public static void main(String[] args) {
-        final FileGetter<?> fileGetter = createFileGetter();
+        final FileGetter<?> fileGetter;
+        try {
+            fileGetter = createFileGetter();
+        } catch (IllegalStateException e) {
+            JOptionPane.showMessageDialog(null, e.getLocalizedMessage(), Constants.TITLE, JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         System.out.println("Loading assets...");
         final long assetLoadTime = AssetManager.loadAssets(fileGetter);
         System.out.println("Loaded assets in " + Duration.ofNanos(assetLoadTime));
+
+        GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(AssetManager.getGameFont());
     }
 
     public static FileGetter<?> createFileGetter() {
@@ -26,7 +37,7 @@ public class GameMain {
         if (!Files.exists(suyuDir)) {
             final Path tryDir = dataParent.resolve("yuzu");
             if (!Files.exists(tryDir)) {
-                throw new IllegalStateException("Suyu directory (" + suyuDir + ") not found");
+                throw new IllegalStateException("Suyu directory (" + suyuDir + ") not found. Please install Suyu.");
             }
             suyuDir = tryDir;
         }

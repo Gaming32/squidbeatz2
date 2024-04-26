@@ -7,11 +7,11 @@ public enum GameTheme {
 
     public final String name;
     public final String resourceSuffix;
-    public final boolean bigMasks;
+    public final boolean fullscreenManual;
 
-    GameTheme(String name, String resourceName, boolean bigMasks) {
+    GameTheme(String name, String resourceName, boolean fullscreenManual) {
         this.name = name;
         this.resourceSuffix = resourceName;
-        this.bigMasks = bigMasks;
+        this.fullscreenManual = fullscreenManual;
     }
 }

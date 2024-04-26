@@ -1,17 +1,26 @@
 package io.github.gaming32.squidbeatz2.game.assets;
 
 import io.github.gaming32.squidbeatz2.Constants;
+import io.github.gaming32.squidbeatz2.bntx.BntxFile;
+import io.github.gaming32.squidbeatz2.bntx.Texture;
 import io.github.gaming32.squidbeatz2.font.BFTTF;
+import io.github.gaming32.squidbeatz2.game.GameTheme;
+import io.github.gaming32.squidbeatz2.lightbfres.BfresExternalFilesLoader;
 import io.github.gaming32.squidbeatz2.msbt.MSBTReader;
+import io.github.gaming32.squidbeatz2.texture.TextureConverter;
+import io.github.gaming32.squidbeatz2.util.seekable.SeekableByteArrayInputStream;
 import io.github.gaming32.squidbeatz2.vgaudio.containers.nintendoware.BCFstmReader;
 import io.github.gaming32.squidbeatz2.vgaudio.containers.wave.WaveWriter;
 import io.github.gaming32.squidbeatz2.vgaudio.formats.AudioData;
 import io.github.gaming32.squidbeatz2.vgaudio.formats.pcm16.Pcm16Format;
 import io.github.gaming32.szslib.sarc.SARCFile;
 import io.github.gaming32.szslib.yaz0.Yaz0InputStream;
+import org.apache.commons.io.function.Uncheck;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.Font;
 import java.awt.FontFormatException;
+import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,18 +28,22 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.DeflaterOutputStream;
 
 public class AssetManager {
     private static List<SongInfo> songs;
     private static Map<String, String> songNames;
-    private static Font gameFont;
     private static Map<String, SongAudio> songAudio;
+    private static Font gameFont;
+    private static Map<GameTheme, ThemeAssets> themeAssets;
+    private static Map<Dance, List<BufferedImage>> dances;
 
     /**
      * @return The nanoseconds taken loading assets
@@ -60,6 +73,10 @@ public class AssetManager {
             }
         });
 
+        final var themeAssetsFuture = loadThemeAssets(fileGetter);
+
+        final var dancesFuture = loadDances(fileGetter);
+
         final var gameFontFuture = CompletableFuture.supplyAsync(() -> {
             try (InputStream is = new Yaz0InputStream(new BufferedInputStream(fileGetter.apply(Constants.FONTS_PATH)))) {
                 final SARCFile sarc = SARCFile.read(is);
@@ -73,17 +90,55 @@ public class AssetManager {
             }
         });
 
-        final var songAudioFuture = songsFuture.thenCompose(songs -> getSongAudio(fileGetter, songs));
+        final var songAudioFuture = songsFuture.thenCompose(songs -> loadSongAudio(fileGetter, songs));
 
         songs = songsFuture.join();
         songNames = songNamesFuture.join();
-        gameFont = gameFontFuture.join();
         songAudio = songAudioFuture.join();
+        gameFont = gameFontFuture.join();
+        themeAssets = themeAssetsFuture.join();
+        dances = dancesFuture.join();
 
         return System.nanoTime() - start;
     }
 
-    private static CompletableFuture<Map<String, SongAudio>> getSongAudio(FileGetter<?> fileGetter, List<SongInfo> songs) {
+    private static CompletableFuture<Map<GameTheme, ThemeAssets>> loadThemeAssets(FileGetter<?> fileGetter) {
+        final List<CompletableFuture<Map.Entry<GameTheme, ThemeAssets>>> futures = new ArrayList<>(GameTheme.values().length);
+        for (final GameTheme theme : GameTheme.values()) {
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                try {
+                    final ThemeAssets assets = new ThemeAssets();
+                    assets.load(loadBfres(fileGetter, "Model/MiniGame" + theme.resourceSuffix + ".Nin_NX_NVN.szs")::iterator);
+                    return Map.entry(theme, assets);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }));
+        }
+        return collectMapFutures(futures);
+    }
+
+    private static CompletableFuture<Map<Dance, List<BufferedImage>>> loadDances(FileGetter<?> fileGetter) {
+        final List<CompletableFuture<Map.Entry<Dance, List<BufferedImage>>>> futures = new ArrayList<>(Dance.values().length);
+        for (final Dance dance : Dance.values()) {
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                try {
+                    return Map.entry(
+                        dance,
+                        loadBfres(fileGetter, "Model/MiniGameDance" + dance.danceId + ".Nin_NX_NVN.szs")
+                            .sorted(Comparator.comparing(t -> t.name))
+                            .map(TextureConverter::toBufferedImage)
+                            .toList()
+                    );
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }));
+        }
+        return collectMapFutures(futures);
+    }
+
+    private static CompletableFuture<Map<String, SongAudio>> loadSongAudio(FileGetter<?> fileGetter, List<SongInfo> songs) {
         final List<CompletableFuture<Map.Entry<String, SongAudio>>> futures = new ArrayList<>(songs.size());
         for (final SongInfo song : songs) {
             futures.add(CompletableFuture.supplyAsync(() -> {
@@ -108,12 +163,39 @@ public class AssetManager {
                 }
             }));
         }
+        return collectMapFutures(futures);
+    }
+
+    private static <K, V> CompletableFuture<Map<K, V>> collectMapFutures(List<CompletableFuture<Map.Entry<K, V>>> futures) {
         return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).thenApply(ignored ->
             futures.stream()
                 .map(CompletableFuture::join)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue))
         );
+    }
+
+    private static Stream<Texture> loadBfres(FileGetter<?> fileGetter, String path) throws IOException {
+        final byte[] bfres;
+        try (InputStream is = new Yaz0InputStream(new BufferedInputStream(fileGetter.apply(path)))) {
+            final SARCFile sarc = SARCFile.read(is);
+            final String bfresFile = sarc.listFiles()
+                .stream()
+                .filter(x -> x.endsWith(".bfres"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No .bfres files found!"));
+            //noinspection DataFlowIssue
+            bfres = sarc.getInputStream(bfresFile).readAllBytes();
+        }
+        return BfresExternalFilesLoader.loadExternalFiles(new SeekableByteArrayInputStream(bfres))
+            .entrySet()
+            .stream()
+            .filter(e -> e.getKey().endsWith(".bntx"))
+            .map(Map.Entry::getValue)
+            .map(SeekableByteArrayInputStream::new)
+            .map(i -> Uncheck.apply(new BntxFile()::load, i))
+            .map(f -> f.textures)
+            .flatMap(List::stream);
     }
 
     public static List<SongInfo> getSongs() {
@@ -124,11 +206,20 @@ public class AssetManager {
         return songNames.get(songId);
     }
 
+    @Nullable
     public static SongAudio getSongAudio(String songId) {
         return songAudio.get(songId);
     }
 
     public static Font getGameFont() {
         return gameFont;
+    }
+
+    public static ThemeAssets getThemeAssets(GameTheme theme) {
+        return themeAssets.get(theme);
+    }
+
+    public static List<BufferedImage> getDance(Dance dance) {
+        return dances.get(dance);
     }
 }
