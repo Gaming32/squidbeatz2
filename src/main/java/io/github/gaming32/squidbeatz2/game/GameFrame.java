@@ -6,6 +6,7 @@ import io.github.gaming32.squidbeatz2.game.assets.Dance;
 import io.github.gaming32.squidbeatz2.game.assets.SongAudio;
 import io.github.gaming32.squidbeatz2.game.assets.SongInfo;
 import io.github.gaming32.squidbeatz2.game.assets.ThemeAssets;
+import io.github.gaming32.squidbeatz2.game.assets.TranslationCategory;
 import it.unimi.dsi.fastutil.floats.FloatList;
 
 import javax.sound.sampled.AudioInputStream;
@@ -34,6 +35,8 @@ public class GameFrame extends JFrame {
     public static final int FRAME_TIME_NANOS = 1_000_000_000 / 60;
     public static final int DANCE_FRAME_TIME = 1_000_000_000 / 30; // Figure out what the actual frame rates are for each animation
     public static final int PLAY_BLINK_TIME = 1_500_000_000;
+
+    private static final List<String> CAPTION_LABELS = List.of("0", "1", "2", "9");
 
     private final GamePanel gamePanel = new GamePanel();
     private final Timer timer = new Timer(FRAME_TIME_MILLIS, this::updateScreen);
@@ -159,6 +162,8 @@ public class GameFrame extends JFrame {
         }
 
         private void draw(Graphics2D g) {
+            final AffineTransform transform = g.getTransform();
+
             final long time = System.nanoTime() - gameStart;
             final long playTime = System.nanoTime() - songStartTime;
             final SongInfo songInfo = AssetManager.getSongs().get(songIndex);
@@ -184,6 +189,17 @@ public class GameFrame extends JFrame {
             };
             g.drawImage(themeAssets.caption, captionPos.x, captionPos.y, null);
             g.drawImage(themeAssets.captionStyleChange, captionPos.x, captionPos.y + themeAssets.caption.getHeight(), null);
+            g.setColor(Color.WHITE);
+            g.scale(0.95, 1);
+            g.setFont(AssetManager.getGameFont().deriveFont(32f));
+            final float textX = captionPos.x / 0.95f + 73f;
+            float textY = captionPos.y + 40;
+            for (final String label : CAPTION_LABELS) {
+                final String translated = AssetManager.getTranslation(TranslationCategory.LABEL, label);
+                g.drawString(translated, textX, textY);
+                textY += 60f;
+            }
+            g.setTransform(transform);
 
             final BufferedImage playStatusImage;
             if (songStartTime == 0) {
@@ -247,13 +263,12 @@ public class GameFrame extends JFrame {
             g.drawImage(themeAssets.notationBars, 150, 667, null);
 
             g.setColor(new Color(0xE02E9D));
-            final AffineTransform oldTransform = g.getTransform();
             g.scale(0.67, 1);
             g.setFont(AssetManager.getGameFont().deriveFont(64f));
             final int visualSongIndex = songIndex < 57 ? songIndex + 1 : songIndex - 57 + 80;
             g.drawString(visualSongIndex + ".", 498, 128);
-            g.drawString(AssetManager.getSongName(songInfo.songId()), 600, 128);
-            g.setTransform(oldTransform);
+            g.drawString(AssetManager.getTranslation(TranslationCategory.SONG, songInfo.songId()), 600, 128);
+            g.setTransform(transform);
 
             g.drawImage(themeAssets.mask, 0, 0, null);
         }

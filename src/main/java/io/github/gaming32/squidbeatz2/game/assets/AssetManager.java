@@ -1,5 +1,7 @@
 package io.github.gaming32.squidbeatz2.game.assets;
 
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
 import io.github.gaming32.squidbeatz2.Constants;
 import io.github.gaming32.squidbeatz2.bntx.BntxFile;
 import io.github.gaming32.squidbeatz2.bntx.Texture;
@@ -41,7 +43,7 @@ import java.util.zip.DeflaterOutputStream;
 
 public class AssetManager {
     private static List<SongInfo> songs;
-    private static Map<String, String> songNames;
+    private static Table<TranslationCategory, String, String> translations;
     private static Map<String, SongAudio> songAudio;
     private static Font gameFont;
     private static Map<GameTheme, ThemeAssets> themeAssets;
@@ -62,15 +64,21 @@ public class AssetManager {
             }
         }).thenApply(progressManager::taskDone);
 
-        final var songNamesFuture = CompletableFuture.supplyAsync(() -> {
+        final var translationsFuture = CompletableFuture.supplyAsync(() -> {
             try {
                 final SARCFile allTranslations;
                 try (InputStream is = new Yaz0InputStream(new BufferedInputStream(fileGetter.apply(Constants.ENGLISH_TRANSLATIONS_PATH)))) {
                     allTranslations = SARCFile.read(is);
                 }
-                try (InputStream is = allTranslations.getInputStream(Constants.MUSIC_NAMES_PATH)) {
-                    return MSBTReader.readMsbt(is);
+                final ImmutableTable.Builder<TranslationCategory, String, String> result = ImmutableTable.builder();
+                for (final TranslationCategory category : TranslationCategory.values()) {
+                    try (InputStream is = allTranslations.getInputStream(category.filename)) {
+                        for (final var entry : MSBTReader.readMsbt(is).entrySet()) {
+                            result.put(category, entry.getKey(), entry.getValue());
+                        }
+                    }
                 }
+                return result.build();
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -100,7 +108,7 @@ public class AssetManager {
             .thenApply(progressManager::taskDone);
 
         songs = songsFuture.join();
-        songNames = songNamesFuture.join();
+        translations = translationsFuture.join();
         songAudio = songAudioFuture.join();
         gameFont = gameFontFuture.join();
         themeAssets = themeAssetsFuture.join();
@@ -212,8 +220,8 @@ public class AssetManager {
         return songs;
     }
 
-    public static String getSongName(String songId) {
-        return songNames.get(songId);
+    public static String getTranslation(TranslationCategory category, String id) {
+        return translations.get(category, id);
     }
 
     @Nullable
