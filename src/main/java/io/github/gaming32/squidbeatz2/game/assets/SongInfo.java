@@ -105,9 +105,6 @@ public record SongInfo(
             final int[] result = new int[array.size()];
             for (int i = 0; i < result.length; i++) {
                 result[i] = ((BymlNumber)array.get(i)).intValue();
-                if (result[i] < -1) {
-                    throw new IllegalArgumentException("Failed to read node " + node);
-                }
             }
             return result;
         }
