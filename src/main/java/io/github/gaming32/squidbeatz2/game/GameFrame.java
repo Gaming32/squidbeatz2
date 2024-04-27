@@ -41,11 +41,12 @@ public class GameFrame extends JFrame {
     private static final List<String> CAPTION_LABELS = List.of("0", "1", "2", "9");
 
     private final GamePanel gamePanel = new GamePanel();
+    private final JMenuBar menuBar = new JMenuBar();
     private final Timer timer = new Timer(FRAME_TIME_MILLIS, this::updateScreen);
     private final Clip clip;
     private final Visualizer visualizer;
 
-    private int songIndex;
+    int songIndex;
     private long songStartTime;
     private GameTheme theme = GameTheme.DEFAULT;
 
@@ -53,6 +54,8 @@ public class GameFrame extends JFrame {
         super(Constants.TITLE);
 
         setContentPane(gamePanel);
+        setJMenuBar(menuBar);
+        setupMenu();
 
         addKeyListener(new KeyAdapter() {
             private final IntSet heldKeys = new IntOpenHashSet();
@@ -65,12 +68,14 @@ public class GameFrame extends JFrame {
                     if ((state & MAXIMIZED_BOTH) != 0) {
                         dispose();
                         setUndecorated(false);
+                        setJMenuBar(menuBar);
                         pack();
                         setVisible(true);
                         setExtendedState(state & ~MAXIMIZED_BOTH);
                     } else {
                         dispose();
                         setUndecorated(true);
+                        setJMenuBar(null);
                         pack();
                         setVisible(true);
                         setExtendedState(state | MAXIMIZED_BOTH);
@@ -127,6 +132,26 @@ public class GameFrame extends JFrame {
         gamePanel.repaint();
     }
 
+    private void setupMenu() {
+        setupFileMenu();
+    }
+
+    private void setupFileMenu() {
+        final JMenu fileMenu = new JMenu("File");
+        fileMenu.setMnemonic(KeyEvent.VK_F);
+        menuBar.add(fileMenu);
+
+        final JMenuItem chooseSongItem = new JMenuItem("Choose Song");
+        chooseSongItem.addActionListener(e -> new ChooseSongDialog(this).setVisible(true));
+        fileMenu.add(chooseSongItem);
+
+        fileMenu.addSeparator();
+
+        final JMenuItem quitItem = new JMenuItem("Quit", KeyEvent.VK_Q);
+        quitItem.addActionListener(e -> dispose());
+        fileMenu.add(quitItem);
+    }
+
     private void playSong() {
         clip.close();
         final SongInfo song = AssetManager.getSongs().get(songIndex);
@@ -160,6 +185,10 @@ public class GameFrame extends JFrame {
     public void hide() {
         timer.stop();
         super.hide();
+    }
+
+    public static int convertSongIndex(int songIndex) {
+        return songIndex < 57 ? songIndex + 1 : songIndex - 57 + 80;
     }
 
     private class GamePanel extends JPanel {
@@ -287,8 +316,7 @@ public class GameFrame extends JFrame {
             g.setColor(new Color(0xE02E9D));
             g.scale(0.67, 1);
             g.setFont(AssetManager.getGameFont().deriveFont(64f));
-            final int visualSongIndex = songIndex < 57 ? songIndex + 1 : songIndex - 57 + 80;
-            g.drawString(visualSongIndex + ".", 498, 128);
+            g.drawString(convertSongIndex(songIndex) + ".", 498, 128);
             g.drawString(AssetManager.getTranslation(TranslationCategory.SONG, songInfo.songId()), 600, 128);
             g.setTransform(transform);
 

@@ -31,7 +31,15 @@ public class GameMain {
 
         GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(AssetManager.getGameFont());
 
-        SwingUtilities.invokeLater(() -> new GameFrame().setVisible(true));
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                System.err.println("Failed to load system LaF");
+                e.printStackTrace();
+            }
+            new GameFrame().setVisible(true);
+        });
     }
 
     public static FileGetter<?> createFileGetter() {
