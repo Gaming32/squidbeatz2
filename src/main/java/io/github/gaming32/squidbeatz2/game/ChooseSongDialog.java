@@ -5,6 +5,7 @@ import io.github.gaming32.squidbeatz2.game.assets.SongInfo;
 import io.github.gaming32.squidbeatz2.game.assets.TranslationCategory;
 
 import javax.swing.*;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Vector;
@@ -17,6 +18,13 @@ public class ChooseSongDialog extends JDialog {
         this.gameFrame = gameFrame;
 
         initComponents();
+
+        rootPane.registerKeyboardAction(
+            e -> dispose(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         pack();
     }

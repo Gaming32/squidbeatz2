@@ -80,6 +80,9 @@ public class GameFrame extends JFrame {
                         setVisible(true);
                         setExtendedState(state | MAXIMIZED_BOTH);
                     }
+                } else if (e.getKeyCode() == KeyEvent.VK_O && e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK) {
+                    heldKeys.remove(KeyEvent.VK_O); // Because the new dialog opens, we never get a release event
+                    new ChooseSongDialog(GameFrame.this).setVisible(true);
                 } else if (e.getKeyCode() == KeyEvent.VK_T) { // TODO: These keybinds need to be remappable
                     theme = GameTheme.values()[(theme.ordinal() + 1) % GameTheme.values().length];
                 } else if (e.getKeyCode() == KeyEvent.VK_K) {
