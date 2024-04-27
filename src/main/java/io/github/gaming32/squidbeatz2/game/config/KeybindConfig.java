@@ -18,11 +18,11 @@ import java.util.Properties;
 
 public class KeybindConfig {
     public static KeyBinding fullscreen = new KeyBinding(KeyEvent.VK_F11);
-    public static KeyBinding changeTheme = KeyBinding.UNBOUND; // TODO: Update when themes actually work
     public static KeyBinding startStop = new KeyBinding(KeyEvent.VK_K);
     public static KeyBinding prevSong = new KeyBinding(KeyEvent.VK_LEFT);
     public static KeyBinding nextSong = new KeyBinding(KeyEvent.VK_RIGHT);
     public static KeyBinding chooseSong = new KeyBinding(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK);
+    public static KeyBinding changeTheme = KeyBinding.UNBOUND;
 
     public static final Map<String, TypedField<KeyBinding>> KEYBINDINGS = createKeyBindingsMap();
 
@@ -84,14 +84,14 @@ public class KeybindConfig {
     }
 
     public record KeyBinding(int key, int modifiers) {
-        public static final KeyBinding UNBOUND = new KeyBinding(0);
+        public static final KeyBinding UNBOUND = new KeyBinding(KeyEvent.VK_UNDEFINED);
 
         public KeyBinding(int key) {
             this(key, 0);
         }
 
         public boolean matches(KeyEvent event) {
-            if (key == 0) {
+            if (key == KeyEvent.VK_UNDEFINED) {
                 return false;
             }
             return key == event.getKeyCode() && modifiers == event.getModifiersEx();
@@ -99,7 +99,7 @@ public class KeybindConfig {
 
         @Override
         public String toString() {
-            if (key == 0) {
+            if (key == KeyEvent.VK_UNDEFINED) {
                 return "Unbound";
             }
             final String keyText = KeyEvent.getKeyText(key);

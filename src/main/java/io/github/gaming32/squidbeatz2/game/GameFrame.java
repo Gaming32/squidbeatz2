@@ -8,6 +8,7 @@ import io.github.gaming32.squidbeatz2.game.assets.SongInfo;
 import io.github.gaming32.squidbeatz2.game.assets.ThemeAssets;
 import io.github.gaming32.squidbeatz2.game.assets.TranslationCategory;
 import io.github.gaming32.squidbeatz2.game.config.KeybindConfig;
+import io.github.gaming32.squidbeatz2.game.config.KeybindDialog;
 import it.unimi.dsi.fastutil.floats.FloatList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -65,6 +66,7 @@ public class GameFrame extends JFrame {
             public void keyPressed(KeyEvent e) {
                 if (!heldKeys.add(e.getKeyCode())) return;
                 if (KeybindConfig.fullscreen.matches(e)) {
+                    e.consume();
                     final int state = getExtendedState();
                     if ((state & MAXIMIZED_BOTH) != 0) {
                         dispose();
@@ -82,8 +84,10 @@ public class GameFrame extends JFrame {
                         setExtendedState(state | MAXIMIZED_BOTH);
                     }
                 } else if (KeybindConfig.changeTheme.matches(e)) {
+                    e.consume();
                     theme = GameTheme.values()[(theme.ordinal() + 1) % GameTheme.values().length];
                 } else if (KeybindConfig.startStop.matches(e)) {
+                    e.consume();
                     if (songStartTime > 0) {
                         songStartTime = 0;
                         clip.stop();
@@ -91,12 +95,14 @@ public class GameFrame extends JFrame {
                         playSong();
                     }
                 } else if (KeybindConfig.prevSong.matches(e) || KeybindConfig.nextSong.matches(e)) {
+                    e.consume();
                     final int shift = KeybindConfig.prevSong.matches(e) ? -1 : 1;
                     songIndex = Math.floorMod(songIndex + shift, AssetManager.getSongs().size());
                     if (songStartTime > 0) {
                         playSong();
                     }
                 } else if (KeybindConfig.chooseSong.matches(e)) {
+                    e.consume();
                     heldKeys.remove(KeyEvent.VK_O); // Because the new dialog opens, we never get a release event
                     new ChooseSongDialog(GameFrame.this).setVisible(true);
                 }
@@ -138,6 +144,7 @@ public class GameFrame extends JFrame {
 
     private void setupMenu() {
         setupFileMenu();
+        setupOptionsMenu();
     }
 
     private void setupFileMenu() {
@@ -154,6 +161,16 @@ public class GameFrame extends JFrame {
         final JMenuItem quitItem = new JMenuItem("Quit", KeyEvent.VK_Q);
         quitItem.addActionListener(e -> dispose());
         fileMenu.add(quitItem);
+    }
+
+    private void setupOptionsMenu() {
+        final JMenu optionsMenu = new JMenu("Options");
+        optionsMenu.setMnemonic(KeyEvent.VK_O);
+        menuBar.add(optionsMenu);
+
+        final JMenuItem editKeybindingsItem = new JMenuItem("Edit Keybindings");
+        editKeybindingsItem.addActionListener(e -> new KeybindDialog(this).setVisible(true));
+        optionsMenu.add(editKeybindingsItem);
     }
 
     private void playSong() {
