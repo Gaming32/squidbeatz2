@@ -3,6 +3,7 @@ package io.github.gaming32.squidbeatz2.game;
 import io.github.gaming32.squidbeatz2.Constants;
 import io.github.gaming32.squidbeatz2.game.assets.AssetManager;
 import io.github.gaming32.squidbeatz2.game.assets.FileGetter;
+import io.github.gaming32.squidbeatz2.game.config.KeybindConfig;
 import it.unimi.dsi.fastutil.floats.FloatConsumer;
 
 import javax.swing.*;
@@ -11,17 +12,42 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.SplashScreen;
+import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 
 public class GameMain {
+    private static Path dataDir;
+
     public static void main(String[] args) {
+        final Path dataParent = getDataParent();
         final FileGetter<?> fileGetter;
         try {
-            fileGetter = createFileGetter();
+            fileGetter = createFileGetter(dataParent);
+            dataDir = dataParent.resolve("squidbeatz2");
+            Files.createDirectories(dataDir);
         } catch (IllegalStateException e) {
-            JOptionPane.showMessageDialog(null, e.getLocalizedMessage(), Constants.TITLE, JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(
+                null,
+                e.getLocalizedMessage(),
+                Constants.TITLE, JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        } catch (FileAlreadyExistsException e) {
+            JOptionPane.showMessageDialog(
+                null,
+                "Data folder (" + dataDir + ") is already a file",
+                Constants.TITLE, JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(
+                null,
+                "Failed to create data folder: " + e,
+                Constants.TITLE, JOptionPane.ERROR_MESSAGE
+            );
             return;
         }
 
@@ -31,23 +57,39 @@ public class GameMain {
 
         GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(AssetManager.getGameFont());
 
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception e) {
-                System.err.println("Failed to load system LaF");
-                e.printStackTrace();
-            }
-            new GameFrame().setVisible(true);
-        });
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            System.err.println("Failed to load system LaF");
+            e.printStackTrace();
+        }
+
+        try {
+            KeybindConfig.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(
+                null,
+                "Failed to load keybindings: " + e,
+                Constants.TITLE, JOptionPane.ERROR_MESSAGE
+            );
+        }
+
+        try {
+            KeybindConfig.save();
+        } catch (IOException e) {
+            System.err.println("Failed to save keybindings");
+            e.printStackTrace();
+        }
+
+        SwingUtilities.invokeLater(() -> new GameFrame().setVisible(true));
     }
 
-    public static FileGetter<?> createFileGetter() {
-        final String dataParentEnvName = Constants.IS_WINDOWS ? "APPDATA" : "XDG_DATA_HOME";
-        final String dataParentEnv = System.getenv(dataParentEnvName);
-        final Path dataParent = dataParentEnv != null
-            ? Path.of(dataParentEnv)
-            : Path.of(System.getProperty("user.home"), ".local", "share");
+    public static Path getDataDir() {
+        return dataDir;
+    }
+
+    public static FileGetter<?> createFileGetter(Path dataParent) {
         Path suyuDir = dataParent.resolve("suyu");
         if (!Files.exists(suyuDir)) {
             final Path tryDir = dataParent.resolve("yuzu");
@@ -68,6 +110,14 @@ public class GameMain {
             result = result.orElse(FileGetter.ofDirectory(octoExpansionPath));
         }
         return result;
+    }
+
+    public static Path getDataParent() {
+        final String dataParentEnvName = Constants.IS_WINDOWS ? "APPDATA" : "XDG_DATA_HOME";
+        final String dataParentEnv = System.getenv(dataParentEnvName);
+        return dataParentEnv != null
+            ? Path.of(dataParentEnv)
+            : Path.of(System.getProperty("user.home"), ".local", "share");
     }
 
     private static FloatConsumer createProgressConsumer() {

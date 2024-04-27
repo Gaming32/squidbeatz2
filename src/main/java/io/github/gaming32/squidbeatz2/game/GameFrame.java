@@ -7,6 +7,7 @@ import io.github.gaming32.squidbeatz2.game.assets.SongAudio;
 import io.github.gaming32.squidbeatz2.game.assets.SongInfo;
 import io.github.gaming32.squidbeatz2.game.assets.ThemeAssets;
 import io.github.gaming32.squidbeatz2.game.assets.TranslationCategory;
+import io.github.gaming32.squidbeatz2.game.config.KeybindConfig;
 import it.unimi.dsi.fastutil.floats.FloatList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -63,7 +64,7 @@ public class GameFrame extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (!heldKeys.add(e.getKeyCode())) return;
-                if (e.getKeyCode() == KeyEvent.VK_F11) {
+                if (KeybindConfig.fullscreen.matches(e)) {
                     final int state = getExtendedState();
                     if ((state & MAXIMIZED_BOTH) != 0) {
                         dispose();
@@ -80,24 +81,24 @@ public class GameFrame extends JFrame {
                         setVisible(true);
                         setExtendedState(state | MAXIMIZED_BOTH);
                     }
-                } else if (e.getKeyCode() == KeyEvent.VK_O && e.getModifiersEx() == KeyEvent.CTRL_DOWN_MASK) {
-                    heldKeys.remove(KeyEvent.VK_O); // Because the new dialog opens, we never get a release event
-                    new ChooseSongDialog(GameFrame.this).setVisible(true);
-                } else if (e.getKeyCode() == KeyEvent.VK_T) { // TODO: These keybinds need to be remappable
+                } else if (KeybindConfig.changeTheme.matches(e)) {
                     theme = GameTheme.values()[(theme.ordinal() + 1) % GameTheme.values().length];
-                } else if (e.getKeyCode() == KeyEvent.VK_K) {
+                } else if (KeybindConfig.startStop.matches(e)) {
                     if (songStartTime > 0) {
                         songStartTime = 0;
                         clip.stop();
                     } else {
                         playSong();
                     }
-                } else if (e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                    final int shift = e.getKeyCode() == KeyEvent.VK_LEFT ? -1 : 1;
+                } else if (KeybindConfig.prevSong.matches(e) || KeybindConfig.nextSong.matches(e)) {
+                    final int shift = KeybindConfig.prevSong.matches(e) ? -1 : 1;
                     songIndex = Math.floorMod(songIndex + shift, AssetManager.getSongs().size());
                     if (songStartTime > 0) {
                         playSong();
                     }
+                } else if (KeybindConfig.chooseSong.matches(e)) {
+                    heldKeys.remove(KeyEvent.VK_O); // Because the new dialog opens, we never get a release event
+                    new ChooseSongDialog(GameFrame.this).setVisible(true);
                 }
             }
 

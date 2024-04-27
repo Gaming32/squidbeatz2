@@ -35,6 +35,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -48,12 +49,13 @@ public class AssetManager {
     private static Font gameFont;
     private static Map<GameTheme, ThemeAssets> themeAssets;
     private static Map<Dance, List<BufferedImage>> dances;
+    private static ResourceBundle resourceBundle;
 
     /**
      * @return The nanoseconds taken loading assets
      */
     public static long loadAssets(FileGetter<?> fileGetter, FloatConsumer progressConsumer) {
-        final ProgressManager progressManager = new ProgressManager(progressConsumer, 6);
+        final ProgressManager progressManager = new ProgressManager(progressConsumer, 7);
         final long start = System.nanoTime();
 
         final var songsFuture = CompletableFuture.supplyAsync(() -> {
@@ -84,6 +86,8 @@ public class AssetManager {
             }
         }).thenApply(progressManager::taskDone);
 
+        final var resourceBundleFuture = CompletableFuture.supplyAsync(() -> ResourceBundle.getBundle("SquidBeatz2"));
+
         final var themeAssetsFuture = loadThemeAssets(fileGetter, progressManager)
             .thenApply(progressManager::taskDone);
 
@@ -113,6 +117,7 @@ public class AssetManager {
         gameFont = gameFontFuture.join();
         themeAssets = themeAssetsFuture.join();
         dances = dancesFuture.join();
+        resourceBundle = resourceBundleFuture.join();
 
         progressManager.complete();
         return System.nanoTime() - start;
@@ -239,6 +244,10 @@ public class AssetManager {
 
     public static List<BufferedImage> getDance(Dance dance) {
         return dances.get(dance);
+    }
+
+    public static ResourceBundle getResourceBundle() {
+        return resourceBundle;
     }
 
     private static final class ProgressManager {
