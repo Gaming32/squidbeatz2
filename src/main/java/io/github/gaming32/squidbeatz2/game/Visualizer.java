@@ -11,10 +11,10 @@ import java.util.function.IntSupplier;
 
 // Based on https://github.com/jiwoojang/AudioVisualizer
 public class Visualizer {
-    private static final int BUFFER_SIZE = 16384;
+    private static final int BUFFER_SIZE = 4096;
     private static final int RAW_BUCKET_COUNT = 200;
     private static final int OUTPUT_BUCKET_COUNT = 4;
-    private static final float MAX_SAMPLE_INDEX = 8192f;
+    private static final float MAX_SAMPLE_INDEX = BUFFER_SIZE / 2f;
     private static final double RAW_BUCKET_MULTIPLIER = Math.pow(10, Math.log10(BUFFER_SIZE / 2f) / (double)RAW_BUCKET_COUNT);
     private static final int RAW_BUCKETS_PER_OUTPUT = RAW_BUCKET_COUNT / OUTPUT_BUCKET_COUNT;
     private static final float[] WINDOW_CACHE = new float[BUFFER_SIZE];

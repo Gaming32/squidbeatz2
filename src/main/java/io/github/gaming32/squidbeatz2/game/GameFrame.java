@@ -32,7 +32,7 @@ import java.util.List;
 public class GameFrame extends JFrame {
     public static final int FRAME_TIME_MILLIS = 1000 / 60;
     public static final int FRAME_TIME_NANOS = 1_000_000_000 / 60;
-    public static final int DANCE_FRAME_TIME = 1_000_000_000 / 30;
+    public static final int DANCE_FRAME_TIME = 1_000_000_000 / 30; // Figure out what the actual frame rates are for each animation
     public static final int PLAY_BLINK_TIME = 1_500_000_000;
 
     private final GamePanel gamePanel = new GamePanel();
@@ -219,9 +219,15 @@ public class GameFrame extends JFrame {
             }
             for (int visualizerX = 0; visualizerX < 16; visualizerX++) {
                 final int frameX = 188 + 57 * visualizerX;
-                // These numbers aren't rocket science. I just picked values that "looked good" to me.
-                final float point = !points.isEmpty() ? points.getFloat(visualizerX + 120) : 0f;
-                final int top = (int)(-point / 150f * 24f - 16);
+                final int top;
+                if (points.isEmpty()) {
+                    top = -1;
+                } else {
+                    final int pointIndex = visualizerX + 121;
+                    final float point = (points.getFloat(pointIndex - 1) + points.getFloat(pointIndex)) / 2f;
+                    final float multiplier = (float)Math.cos((visualizerX - 1f) / 8 * Math.PI) * 5f + 17f;
+                    top = (int)(-point / 150f * multiplier - 6);
+                }
                 for (int visualizerY = 0; visualizerY < 16; visualizerY++) {
                     final int frameY = 192 + 21 * visualizerY;
                     final int pointOrigin = 16 - visualizerY;
