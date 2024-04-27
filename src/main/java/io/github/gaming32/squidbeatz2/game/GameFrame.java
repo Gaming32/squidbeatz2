@@ -6,6 +6,7 @@ import io.github.gaming32.squidbeatz2.game.assets.Dance;
 import io.github.gaming32.squidbeatz2.game.assets.SongAudio;
 import io.github.gaming32.squidbeatz2.game.assets.SongInfo;
 import io.github.gaming32.squidbeatz2.game.assets.ThemeAssets;
+import it.unimi.dsi.fastutil.floats.FloatList;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -37,6 +38,7 @@ public class GameFrame extends JFrame {
     private final GamePanel gamePanel = new GamePanel();
     private final Timer timer = new Timer(FRAME_TIME_MILLIS, this::updateScreen);
     private final Clip clip;
+    private final Visualizer visualizer;
 
     private int songIndex;
     private long songStartTime;
@@ -65,7 +67,7 @@ public class GameFrame extends JFrame {
                         setVisible(true);
                         setExtendedState(state | MAXIMIZED_BOTH);
                     }
-                } else if (e.getKeyCode() == KeyEvent.VK_T) { // TODO: These keybinds need to be remappable testing code
+                } else if (e.getKeyCode() == KeyEvent.VK_T) { // TODO: These keybinds need to be remappable
                     theme = GameTheme.values()[(theme.ordinal() + 1) % GameTheme.values().length];
                 } else if (e.getKeyCode() == KeyEvent.VK_K) {
                     if (songStartTime > 0) {
@@ -89,6 +91,7 @@ public class GameFrame extends JFrame {
         } catch (LineUnavailableException e) {
             throw new IllegalStateException(e);
         }
+        visualizer = new Visualizer(clip::getFramePosition, new short[0]);
 
         setResizable(false);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -112,6 +115,7 @@ public class GameFrame extends JFrame {
                 clip.setLoopPoints(audio.loopStart(), audio.loopEnd() - 1);
                 clip.loop(Clip.LOOP_CONTINUOUSLY);
             }
+            visualizer.setSamples(audio.monoSamples());
             clip.start();
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             throw new RuntimeException(e);
@@ -205,6 +209,36 @@ public class GameFrame extends JFrame {
             final BufferedImage danceImage = danceFrames.get(danceFrame);
             g.drawImage(danceImage, 1159, 177, danceImage.getWidth() * 2, danceImage.getHeight() * 2, null);
 
+            g.drawImage(themeAssets.equalizerFrame, 153, 162, null);
+            final FloatList points;
+            if (clip.isRunning()) {
+                visualizer.update();
+                points = visualizer.getPoints();
+            } else {
+                points = FloatList.of();
+            }
+            for (int visualizerX = 0; visualizerX < 16; visualizerX++) {
+                final int frameX = 188 + 57 * visualizerX;
+                // These numbers aren't rocket science. I just picked values that "looked good" to me.
+                final float point = !points.isEmpty() ? points.getFloat(visualizerX + 120) : 0f;
+                final int top = (int)(-point / 150f * 24f - 16);
+                for (int visualizerY = 0; visualizerY < 16; visualizerY++) {
+                    final int frameY = 192 + 21 * visualizerY;
+                    final int pointOrigin = 16 - visualizerY;
+                    final BufferedImage image;
+                    if (pointOrigin == top) {
+                        image = themeAssets.blockHigh;
+                    } else if (pointOrigin < top) {
+                        image = themeAssets.blockNormal;
+                    } else {
+                        image = themeAssets.blockOff;
+                    }
+                    // Nintendo's is shifted right by half a pixel. There's no way to replicate this with Java 2D, however.
+                    g.drawImage(image, frameX, frameY, null);
+                }
+            }
+
+            g.drawImage(themeAssets.notationBars, 150, 667, null);
 
             g.setColor(new Color(0xE02E9D));
             final AffineTransform oldTransform = g.getTransform();

@@ -167,10 +167,7 @@ public class AssetManager {
                         new WaveWriter().writeToStream(data, dos);
                     }
                     final Pcm16Format pcm = data.getFormat(Pcm16Format.class);
-                    return Map.entry(
-                        song.songId(),
-                        new SongAudio(pcm.isLooping(), pcm.getLoopStart(), pcm.getLoopEnd(), compressedData.toByteArray())
-                    );
+                    return Map.entry(song.songId(), new SongAudio(pcm, compressedData.toByteArray()));
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }

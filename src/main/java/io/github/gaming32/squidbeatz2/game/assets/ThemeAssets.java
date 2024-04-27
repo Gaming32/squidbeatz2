@@ -13,6 +13,11 @@ public class ThemeAssets {
     public BufferedImage playIcon;
     public BufferedImage playIconDark;
     public BufferedImage stopIcon;
+    public BufferedImage equalizerFrame;
+    public BufferedImage blockHigh;
+    public BufferedImage blockNormal;
+    public BufferedImage blockOff;
+    public BufferedImage notationBars;
 
     public void load(Iterable<Texture> textures) {
         for (final Texture texture : textures) {
@@ -25,6 +30,11 @@ public class ThemeAssets {
                 case "Playmark" -> playIcon = image;
                 case "Playmark_Dark" -> playIconDark = image;
                 case "StopMark" -> stopIcon = image;
+                case "IcolizerFrame" -> equalizerFrame = image;
+                case "Block_high" -> blockHigh = image;
+                case "Block_normal" -> blockNormal = image;
+                case "Block_off" -> blockOff = image;
+                case "Base_notation" -> notationBars = image;
             }
         }
     }
