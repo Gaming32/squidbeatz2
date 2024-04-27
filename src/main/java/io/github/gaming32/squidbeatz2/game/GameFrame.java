@@ -8,6 +8,8 @@ import io.github.gaming32.squidbeatz2.game.assets.SongInfo;
 import io.github.gaming32.squidbeatz2.game.assets.ThemeAssets;
 import io.github.gaming32.squidbeatz2.game.assets.TranslationCategory;
 import it.unimi.dsi.fastutil.floats.FloatList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -53,8 +55,11 @@ public class GameFrame extends JFrame {
         setContentPane(gamePanel);
 
         addKeyListener(new KeyAdapter() {
+            private final IntSet heldKeys = new IntOpenHashSet();
+
             @Override
             public void keyPressed(KeyEvent e) {
+                if (!heldKeys.add(e.getKeyCode())) return;
                 if (e.getKeyCode() == KeyEvent.VK_F11) {
                     final int state = getExtendedState();
                     if ((state & MAXIMIZED_BOTH) != 0) {
@@ -86,6 +91,11 @@ public class GameFrame extends JFrame {
                         playSong();
                     }
                 }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                heldKeys.remove(e.getKeyCode());
             }
         });
 
