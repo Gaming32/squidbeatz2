@@ -18,6 +18,7 @@ import java.util.List;
 public record SongInfo(
     Dance dance,
     long delay,
+    int forcedDispId,
     NoteData normalNotes,
     NoteData extremeNotes,
     String songId
@@ -66,10 +67,20 @@ public record SongInfo(
             default -> throw new IllegalArgumentException("Unknown dance: " + songData.get("Dance"));
         };
         final BymlNumber delay = (BymlNumber)songData.get("Delay");
+        final BymlNumber forcedDispId = (BymlNumber)songData.get("DispId");
         final NoteData normalNotes = NoteData.load((BymlHash)allNoteData.get(songData.get("NoteNormal").toString()));
         final NoteData extremeNotes = NoteData.load((BymlHash)allNoteData.get(songData.get("NoteExtreme").toString()));
         final String songId = songData.get("Strm").toString();
-        return new SongInfo(dance, delay != null ? delay.longValue() : 0L, normalNotes, extremeNotes, songId);
+        return new SongInfo(
+            dance,
+            delay != null ? delay.longValue() : 0L,
+            forcedDispId != null ? forcedDispId.intValue() : 0,
+            normalNotes, extremeNotes, songId
+        );
+    }
+
+    public int getDisplayNumber(int index) {
+        return forcedDispId != 0 ? forcedDispId : index + 1;
     }
 
     public record NoteData(

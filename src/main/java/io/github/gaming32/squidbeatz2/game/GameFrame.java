@@ -208,10 +208,6 @@ public class GameFrame extends JFrame {
         super.hide();
     }
 
-    public static int convertSongIndex(int songIndex) {
-        return songIndex < 57 ? songIndex + 1 : songIndex - 57 + 80;
-    }
-
     private class GamePanel extends JPanel {
         final long gameStart = System.nanoTime();
         int lastDanceFrame, dancePauseFrame;
@@ -337,7 +333,7 @@ public class GameFrame extends JFrame {
             g.setColor(new Color(0xE02E9D));
             g.scale(0.67, 1);
             g.setFont(AssetManager.getGameFont().deriveFont(64f));
-            g.drawString(convertSongIndex(songIndex) + ".", 498, 128);
+            g.drawString(songInfo.getDisplayNumber(songIndex) + ".", 498, 128);
             g.drawString(AssetManager.getTranslation(TranslationCategory.SONG, songInfo.songId()), 600, 128);
             g.setTransform(transform);
 

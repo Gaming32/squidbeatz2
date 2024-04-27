@@ -34,7 +34,7 @@ public class ChooseSongDialog extends JDialog {
         final JList<String> songList = new JList<>(songVector);
         for (final SongInfo song : AssetManager.getSongs()) {
             songVector.add(
-                GameFrame.convertSongIndex(songVector.size()) + ". " +
+                song.getDisplayNumber(songVector.size()) + ". " +
                 AssetManager.getTranslation(TranslationCategory.SONG, song.songId())
             );
         }
