@@ -18,7 +18,6 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
-import java.awt.SplashScreen;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,11 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 public class MusicPlayer {
     public static void main(String[] args) throws Exception {
-        try {
-            SplashScreen.getSplashScreen().close();
-        } catch (NoClassDefFoundError | NullPointerException | UnsupportedOperationException ignored) {
-        }
-
         final String dataParentEnvName = Constants.IS_WINDOWS ? "APPDATA" : "XDG_DATA_HOME";
         final String dataParentEnv = System.getenv(dataParentEnvName);
         final Path dataParent = dataParentEnv != null
