@@ -17,7 +17,7 @@ import java.util.List;
 
 public record SongInfo(
     Dance dance,
-    long delay,
+    int delay,
     int forcedDispId,
     NoteData normalNotes,
     NoteData extremeNotes,
@@ -73,7 +73,7 @@ public record SongInfo(
         final String songId = songData.get("Strm").toString();
         return new SongInfo(
             dance,
-            delay != null ? delay.longValue() : 0L,
+            delay != null ? delay.intValue() : 0,
             forcedDispId != null ? forcedDispId.intValue() : 0,
             normalNotes, extremeNotes, songId
         );
@@ -84,27 +84,30 @@ public record SongInfo(
     }
 
     public record NoteData(
-        long endNote,
-        long[] downLeft,
-        long[] downRight,
-        long[] upLeft,
-        long[] upRight
+        int endNote,
+        int[] downLeft,
+        int[] downRight,
+        int[] upLeft,
+        int[] upRight
     ) {
         public static NoteData load(BymlHash data) {
             return new NoteData(
-                ((BymlNumber)data.get("EndNote")).longValue(),
-                loadLongArray(data.get("NotesDownL")),
-                loadLongArray(data.get("NotesDownR")),
-                loadLongArray(data.get("NotesUpL")),
-                loadLongArray(data.get("NotesUpR"))
+                ((BymlNumber)data.get("EndNote")).intValue(),
+                loadIntArray(data.get("NotesDownL")),
+                loadIntArray(data.get("NotesDownR")),
+                loadIntArray(data.get("NotesUpL")),
+                loadIntArray(data.get("NotesUpR"))
             );
         }
 
-        private static long[] loadLongArray(BymlNode node) {
+        private static int[] loadIntArray(BymlNode node) {
             final BymlArray array = (BymlArray)node;
-            final long[] result = new long[array.size()];
+            final int[] result = new int[array.size()];
             for (int i = 0; i < result.length; i++) {
-                result[i] = ((BymlNumber)array.get(i)).longValue();
+                result[i] = ((BymlNumber)array.get(i)).intValue();
+                if (result[i] < -1) {
+                    throw new IllegalArgumentException("Failed to read node " + node);
+                }
             }
             return result;
         }
