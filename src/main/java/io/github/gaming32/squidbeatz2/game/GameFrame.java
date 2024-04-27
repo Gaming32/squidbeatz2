@@ -103,7 +103,7 @@ public class GameFrame extends JFrame {
                     }
                 } else if (KeybindConfig.chooseSong.matches(e)) {
                     e.consume();
-                    heldKeys.remove(KeyEvent.VK_O); // Because the new dialog opens, we never get a release event
+                    heldKeys.remove(KeybindConfig.chooseSong.key()); // Because the new dialog opens, we never get a release event
                     new ChooseSongDialog(GameFrame.this).setVisible(true);
                 }
             }
