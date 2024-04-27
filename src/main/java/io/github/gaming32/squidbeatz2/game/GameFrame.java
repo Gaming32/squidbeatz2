@@ -94,7 +94,19 @@ public class GameFrame extends JFrame {
         } catch (LineUnavailableException e) {
             throw new IllegalStateException(e);
         }
-        visualizer = new Visualizer(clip::getFramePosition, new short[0]);
+        visualizer = new Visualizer(() -> {
+            int frame = clip.getFramePosition();
+            final SongAudio audio = AssetManager.getSongAudio(AssetManager.getSongs().get(songIndex).songId());
+            if (audio == null || !audio.loop()) {
+                return frame;
+            }
+            final int loopStart = audio.loopStart();
+            final int loopEnd = audio.loopEnd() - 1;
+            while (frame >= loopEnd) {
+                frame = frame - loopEnd + loopStart;
+            }
+            return frame;
+        }, new short[0]);
 
         setResizable(false);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
