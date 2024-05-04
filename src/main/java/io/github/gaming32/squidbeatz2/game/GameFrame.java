@@ -73,15 +73,15 @@ public class GameFrame extends JFrame {
                         setUndecorated(false);
                         setJMenuBar(menuBar);
                         pack();
-                        setVisible(true);
                         setExtendedState(state & ~MAXIMIZED_BOTH);
+                        setVisible(true);
                     } else {
                         dispose();
                         setUndecorated(true);
                         setJMenuBar(null);
                         pack();
-                        setVisible(true);
                         setExtendedState(state | MAXIMIZED_BOTH);
+                        setVisible(true);
                     }
                 } else if (KeybindConfig.changeTheme.matches(e)) {
                     e.consume();
