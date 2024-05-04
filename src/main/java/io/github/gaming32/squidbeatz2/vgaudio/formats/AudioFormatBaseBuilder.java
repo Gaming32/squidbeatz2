@@ -8,7 +8,7 @@ public abstract class AudioFormatBaseBuilder<F extends AudioFormatBase<F, B>, B 
     protected boolean looping;
     protected int loopStart;
     protected int loopEnd;
-    protected int sampleCount;
+    public int sampleCount; // Squid Beatz 2: Make public
     protected int sampleRate;
     protected List<AudioTrack> tracks;
 

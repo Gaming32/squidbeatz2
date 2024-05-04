@@ -6,6 +6,9 @@ import io.github.gaming32.squidbeatz2.byml.node.BymlCollection;
 import io.github.gaming32.squidbeatz2.byml.node.BymlHash;
 import io.github.gaming32.squidbeatz2.byml.node.BymlNode;
 import io.github.gaming32.squidbeatz2.byml.node.BymlNumber;
+import io.github.gaming32.squidbeatz2.vgaudio.formats.AudioData;
+import io.github.gaming32.squidbeatz2.vgaudio.formats.pcm16.Pcm16Format;
+import io.github.gaming32.squidbeatz2.vgaudio.formats.pcm16.Pcm16FormatBuilder;
 import io.github.gaming32.szslib.sarc.SARCFile;
 import io.github.gaming32.szslib.yaz0.Yaz0InputStream;
 
@@ -81,6 +84,27 @@ public record SongInfo(
 
     public int getDisplayNumber(int index) {
         return forcedDispId != 0 ? forcedDispId : index + 1;
+    }
+
+    public AudioData insertSilence(AudioData data) {
+        if (delay == 0) {
+            return data;
+        }
+        final Pcm16Format pcm = data.getFormat(Pcm16Format.class);
+        final short[][] channels = new short[pcm.getChannelCount()][];
+        final int newSamples = (int)((long)delay * pcm.sampleRate / 1000L);
+        final int originalSamples = pcm.getSampleCount();
+        final int totalSamples = newSamples + originalSamples;
+        for (int i = 0; i < channels.length; i++) {
+            final short[] newChannel = new short[totalSamples];
+            System.arraycopy(pcm.channels[i], 0, newChannel, newSamples, originalSamples);
+            channels[i] = newChannel;
+        }
+        final Pcm16FormatBuilder builder = pcm.getCloneBuilder();
+        builder.channels = channels;
+        builder.sampleCount = totalSamples;
+        builder.withLoop(pcm.looping, pcm.getLoopStart() + newSamples, pcm.getLoopEnd() + newSamples);
+        return new AudioData(builder.build());
     }
 
     public record NoteData(

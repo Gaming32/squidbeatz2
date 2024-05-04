@@ -171,7 +171,7 @@ public class AssetManager {
                 try {
                     final AudioData data;
                     try (var is = fileGetter.apply(Constants.STREAM_PATH + '/' + song.songId() + ".bfstm")) {
-                        data = new BCFstmReader().read(is);
+                        data = song.insertSilence(new BCFstmReader().read(is));
                     } catch (NoSuchFileException e) {
                         return null;
                     }
