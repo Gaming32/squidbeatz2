@@ -12,6 +12,7 @@ import java.util.Vector;
 
 public class ChooseSongDialog extends JDialog {
     private final GameFrame gameFrame;
+    private JList<String> songList;
 
     public ChooseSongDialog(GameFrame gameFrame) {
         super(gameFrame, "Choose Song", true);
@@ -24,6 +25,14 @@ public class ChooseSongDialog extends JDialog {
             KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
             JComponent.WHEN_IN_FOCUSED_WINDOW
         );
+        rootPane.registerKeyboardAction(
+            e -> {
+                gameFrame.selectSong(songList.getSelectedIndex());
+                dispose();
+            },
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
 
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         pack();
@@ -31,7 +40,7 @@ public class ChooseSongDialog extends JDialog {
 
     private void initComponents() {
         final Vector<String> songVector = new Vector<>();
-        final JList<String> songList = new JList<>(songVector);
+        songList = new JList<>(songVector);
         for (final SongInfo song : AssetManager.getSongs()) {
             songVector.add(
                 song.getDisplayNumber(songVector.size()) + ". " +
@@ -42,7 +51,7 @@ public class ChooseSongDialog extends JDialog {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    gameFrame.songIndex = songList.getSelectedIndex();
+                    gameFrame.selectSong(songList.getSelectedIndex());
                     dispose();
                 }
             }
@@ -52,7 +61,7 @@ public class ChooseSongDialog extends JDialog {
 
         final JButton okButton = new JButton("Ok");
         okButton.addActionListener(e -> {
-            gameFrame.songIndex = songList.getSelectedIndex();
+            gameFrame.selectSong(songList.getSelectedIndex());
             dispose();
         });
         okButton.setEnabled(false);

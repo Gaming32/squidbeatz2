@@ -48,7 +48,7 @@ public class GameFrame extends JFrame {
     private final Clip clip;
     private final Visualizer visualizer;
 
-    int songIndex;
+    private int songIndex;
     private long songStartTime;
     private GameTheme theme = GameTheme.DEFAULT;
 
@@ -97,13 +97,10 @@ public class GameFrame extends JFrame {
                 } else if (KeybindConfig.prevSong.matches(e) || KeybindConfig.nextSong.matches(e)) {
                     e.consume();
                     final int shift = KeybindConfig.prevSong.matches(e) ? -1 : 1;
-                    songIndex = Math.floorMod(songIndex + shift, AssetManager.getSongs().size());
-                    if (songStartTime > 0) {
-                        playSong();
-                    }
+                    selectSong(Math.floorMod(songIndex + shift, AssetManager.getSongs().size()));
                 } else if (KeybindConfig.chooseSong.matches(e)) {
                     e.consume();
-                    heldKeys.remove(KeybindConfig.chooseSong.key()); // Because the new dialog opens, we never get a release event
+                    heldKeys.remove(e.getKeyCode()); // Because the new dialog opens, we never get a release event
                     new ChooseSongDialog(GameFrame.this).setVisible(true);
                 }
             }
@@ -171,6 +168,13 @@ public class GameFrame extends JFrame {
         final JMenuItem editKeybindingsItem = new JMenuItem("Edit Keybindings");
         editKeybindingsItem.addActionListener(e -> new KeybindDialog(this).setVisible(true));
         optionsMenu.add(editKeybindingsItem);
+    }
+
+    public void selectSong(int songIndex) {
+        this.songIndex = songIndex;
+        if (songStartTime > 0) {
+            playSong();
+        }
     }
 
     private void playSong() {
