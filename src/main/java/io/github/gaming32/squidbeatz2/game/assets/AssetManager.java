@@ -86,7 +86,8 @@ public class AssetManager {
             }
         }).thenApply(progressManager::taskDone);
 
-        final var resourceBundleFuture = CompletableFuture.supplyAsync(() -> ResourceBundle.getBundle("SquidBeatz2"));
+        final var resourceBundleFuture = CompletableFuture.supplyAsync(() -> ResourceBundle.getBundle("SquidBeatz2"))
+            .thenApply(progressManager::taskDone);
 
         final var themeAssetsFuture = loadThemeAssets(fileGetter, progressManager)
             .thenApply(progressManager::taskDone);
