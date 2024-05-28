@@ -17,6 +17,7 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 
 public class GameMain {
     private static Path dataDir;
@@ -99,17 +100,28 @@ public class GameMain {
             suyuDir = tryDir;
         }
 
-        final Path romfsPath = suyuDir.resolve("dump/0100F8F0000A2000/romfs");
-        if (!Files.exists(romfsPath)) {
+        final Path romfsPath = findRomfsPath(suyuDir, Constants.SPLATOON_2_TITLES);
+        if (romfsPath == null) {
             throw new IllegalStateException("Splatoon 2 dump not found. Did you forget to dump Splatoon 2?");
         }
-        final Path octoExpansionPath = suyuDir.resolve("dump/0100F8F0000A3065/romfs");
+        final Path octoExpansionPath = findRomfsPath(suyuDir, Constants.OCTO_EXPANSION_TITLES);
 
         FileGetter<?> result = FileGetter.ofDirectory(romfsPath);
-        if (Files.exists(octoExpansionPath)) {
+        if (octoExpansionPath != null) {
             result = result.orElse(FileGetter.ofDirectory(octoExpansionPath));
         }
         return result;
+    }
+
+    private static Path findRomfsPath(Path suyuDir, List<String> titleList) {
+        final Path dumpDir = suyuDir.resolve("dump");
+        for (final String title : titleList) {
+            final Path result = dumpDir.resolve(title).resolve("romfs");
+            if (Files.isDirectory(result)) {
+                return result;
+            }
+        }
+        return null;
     }
 
     public static Path getDataParent() {
